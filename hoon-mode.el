@@ -47,7 +47,7 @@
 (add-to-list 'auto-mode-alist '("\\.hook$" . hoon-mode))
 
 (defvar hoon-mode-syntax-table
-  (let ((st (make-syntax-table lisp-mode-syntax-table)))
+  (let ((st (make-syntax-table)))
     (modify-syntax-entry ?\' "\"" st)
     (modify-syntax-entry ?| "." st)
     (modify-syntax-entry ?\; "." st)
@@ -57,9 +57,75 @@
     st)
   "Syntax table for `hoon-mode'.")
 
+(defconst hoon-font-lock-runes-rx
+  ;; This could be `regexp-opt' and added statically for more speed
+  (rx (or
+       "||" "|_" "|%" "|:" "|." "|-" "|^" "|+" "|*" "|=" "|?" "|/"
+       "%_" "%:" "%." "%^" "%+" "%-" "%~" "%*" "%="
+       "$|" "$_" "$:" "$%" "$," "$&" "$?" "$+" "$="
+       ":_" ":~" ":/" ":^" ":+" ":-" ":~" ":*"
+       ".+" ".*" ".=" ".?" ".^"
+       "#<" "#>"
+       "^|" "^." "^-" "^+" "^&" "^~" "^=" "^?"
+       "~|" "~$" "~%" "~:" "~/" "~<" "~>" "~#" "~^" "~+" "~&" "~=" "~?" "~!"
+       ";_" ";," ";%" ";:" ";." ";<" ";>" ";-" ";+" ";&" ";~" ";;" ";*" ";=" ";?"
+       "=|" "=." "=^" "=:" "=<" "=>" "=-" "=+" "=*" "=~"
+       "?|" "?:" "?." "?<" "?>" "?-" "?^" "?=" "?+" "?&" "?@" "?~" "?!"
+       "!:" "!," "!;" "!^" "!>" "!="
+       ;; Not technically runes, but we highlight them like that.
+       "=="
+       "--"
+       ))
+  "Regexp of runes")
+
+(defconst hoon-font-lock-numbers-rx
+  ;; Numbers are in decimal, binary, hex, base32, or base64, and they must
+  ;; contain dots (optionally followed by whitespace), as in the German manner.
+  (rx (or
+       (and "0w"
+            (repeat 1 5 (in "-~0-9a-zA-Z"))
+            (zero-or-more "." (repeat 5 (in "-~0-9a-zA-Z"))))
+       (and "0v"
+            (repeat 1 5 (in "0-9a-v"))
+            (zero-or-more "." (repeat 5 (in "0-9a-v"))))
+       (and "0b"
+            (repeat 1 4 (in "0-1"))
+            (zero-or-more "." (repeat 4 (in "0-1"))))
+       (and "0x"
+            (repeat 1 4 hex)
+            (zero-or-more "." (repeat 4 hex)))
+       (and (repeat 1 3 digit)
+            (zero-or-more "." (repeat 3 digit)))
+       ))
+  "Regexp of numbers")
+
+(defconst hoon-font-lock-todos-rx
+  (rx (or "XX" "XXX" "TODO" "FIXME"))
+  "Regexp of todo notes")
+
+(defconst hoon-font-lock-declarations-rx
+  (rx (and (group "+" (or "+" "-")) space (one-or-more space)
+           (or "$" (and word (one-or-more word)))))
+  "Regexp of declarations")
+
+(defconst hoon-font-lock-symbols-rx
+  (rx (and "%" (or (one-or-more (any word "-"))
+                   "|" "&" "$" ".n" ".y")))
+  "Regexp of symbols")
+
 (defvar hoon-font-lock-keywords
-  '(
-    ("\\+\\+  \\(\\w+\\)" (1 font-lock-function-name-face))
+  `(
+    (,hoon-font-lock-declarations-rx 1 font-lock-function-name-face)
+    (,hoon-font-lock-runes-rx . font-lock-constant-face)
+    (,hoon-font-lock-symbols-rx . font-lock-keyword-face)
+    ;; Atom
+    ("\\(@\\w*\\)\\|\\^" . font-lock-function-name-face)
+    ;; Identifier
+    ;; Branch
+    ;; Type
+    (,hoon-font-lock-numbers-rx . font-lock-constant-face)
+    (,hoon-font-lock-todos-rx . font-lock-warning-face)
+    ;; String
     ("\\(%\\w+\\)" (1 font-lock-keyword-face))
     ("\\(\\w+\\)=" (1 font-lock-variable-name-face))
     ("[=,]\\(\\w+\\|@\\w*\\)" (1 font-lock-type-face))
