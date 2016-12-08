@@ -1,13 +1,14 @@
 ;;; hoon-mode.el --- Major mode for editing hoon files for urbit
 
-;; Copyright (C) 2014–2015 Urbit
+;; Copyright (C) 2014–2016 Urbit
 
 ;; Author: 
-;;    * Adam Bliss     https://github.com/abliss          <abliss@gmail.com>
+;;    * Adam Bliss      https://github.com/abliss          <abliss@gmail.com>
 ;; Contributors: 
-;;    * N Gvrnd        https://github.com/ngvrnd
-;;    * TJamesCorcoran https://github.com/TJamesCorcoran <jamescorcoran@gmail.com>
-;;    * Rastus Vernon  https://github.com/rastus-vernon  <rastus.vernon@protonmail.ch>
+;;    * N Gvrnd         https://github.com/ngvrnd
+;;    * TJamesCorcoran  https://github.com/TJamesCorcoran <jamescorcoran@gmail.com>
+;;    * Rastus Vernon   https://github.com/rastus-vernon  <rastus.vernon@protonmail.ch>
+;;    * Elliot Glaysher https://github.com/eglaysher      <erg@google.com>
 ;;
 ;; Keywords: extensions, hoon, nock, urbit, Mars
 
@@ -137,13 +138,15 @@
 (defvar hoon-outline-regexp ":::")
 
 ;;;###autoload
-(define-derived-mode hoon-mode fundamental-mode "Hoon"
+(define-derived-mode hoon-mode prog-mode "Hoon"
   "A major mode for editing Hoon files."
   :syntax-table hoon-mode-syntax-table
   (set (make-local-variable 'comment-start) "::")
+  (set (make-local-variable 'comment-padding) 2)
   (set (make-local-variable 'comment-end) "")
-  (set (make-local-variable 'comment-use-syntax) nil)
-  (set (make-local-variable 'comment-start-skip) "\\(::+\\)\\s *")
+  (set (make-local-variable 'comment-column) 56)   ;; zero based columns
+  (set (make-local-variable 'comment-use-syntax) t)
+  (set (make-local-variable 'comment-start-skip) "\\(::+\\)\\s-*")
   (set (make-local-variable 'font-lock-defaults) '(hoon-font-lock-keywords))
   (set (make-local-variable 'indent-tabs-mode) nil) ;; tabs zutiefst verboten
   (set (make-local-variable 'indent-line-function) 'indent-relative)
