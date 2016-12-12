@@ -9,7 +9,7 @@
 ;;    * TJamesCorcoran https://github.com/TJamesCorcoran <jamescorcoran@gmail.com>
 ;;    * Rastus Vernon  https://github.com/rastus-vernon  <rastus.vernon@protonmail.ch>
 ;;
-;; Keywords: extensions, hoon, nock, urbit, neoreaction, Mars
+;; Keywords: extensions, hoon, nock, urbit, Mars
 
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
