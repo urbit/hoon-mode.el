@@ -1,13 +1,14 @@
 ;;; hoon-mode.el --- Major mode for editing hoon files for urbit
 
-;; Copyright (C) 2014–2015 Urbit
+;; Copyright (C) 2014–2016 Urbit
 
 ;; Author: 
-;;    * Adam Bliss     https://github.com/abliss          <abliss@gmail.com>
+;;    * Adam Bliss      https://github.com/abliss          <abliss@gmail.com>
 ;; Contributors: 
-;;    * N Gvrnd        https://github.com/ngvrnd
-;;    * TJamesCorcoran https://github.com/TJamesCorcoran <jamescorcoran@gmail.com>
-;;    * Rastus Vernon  https://github.com/rastus-vernon  <rastus.vernon@protonmail.ch>
+;;    * N Gvrnd         https://github.com/ngvrnd
+;;    * TJamesCorcoran  https://github.com/TJamesCorcoran <jamescorcoran@gmail.com>
+;;    * Rastus Vernon   https://github.com/rastus-vernon  <rastus.vernon@protonmail.ch>
+;;    * Elliot Glaysher https://github.com/eglaysher      <erg@google.com>
 ;;
 ;; Keywords: extensions, hoon, nock, urbit, Mars
 
@@ -31,8 +32,9 @@
 ;; This is my first Major Mode, so don't expect much. It's heavily based on
 ;; SampleMode from the emacs wiki.
 
-
 ;;; Code:
+
+(require 'cl-lib)
 
 (defvar hoon-mode-hook nil)
 
@@ -57,26 +59,105 @@
     st)
   "Syntax table for `hoon-mode'.")
 
+(eval-and-compile
+  (defconst hoon-rx-constituents
+    `((gap . ,(rx (and space (one-or-more space))))
+      (identifier . ,(rx (and lower (zero-or-more (or lower digit "-")))))
+      (mold . ,(rx (or "*"
+                       "?"
+                       (and "@" (zero-or-more word))
+                       (and (opt "$-")
+                            "("
+                            (one-or-more
+                             (or (or alphanumeric "(" ")" "*" "?" "@" "-" ":")
+                                 ;; Spaces must be single.
+                                 (and space (or alphanumeric "(" ")" "*" "?"
+                                                "@" "-" ":"))))
+                            ")")
+                       (and lower (one-or-more (or lower digit "-" ":")))
+                       "$-"
+                       )))
+      (wing . ,(rx (one-or-more (or "." lower digit "-" "+" "<" ">"))))
+      )
+    "Common patterns used in font locking hoon code.")
+
+  (defmacro hoon-rx (&rest regexps)
+    "Hoon mode specialized rx macro."
+    (let ((rx-constituents (append hoon-rx-constituents rx-constituents)))
+      (cond ((null regexps)
+             (error "No regexp"))
+            ((cdr regexps)
+             (rx-to-string `(and ,@regexps) t))
+            (t
+             (rx-to-string (car regexps) t))))))
+
+
+
+(defconst hoon-font-lock-arm-declarations-rx
+  (hoon-rx (and (group "+" (or "+" "-")) gap
+                (group (or "$" identifier))))
+  "Regexp of declarations")
+
+(defconst hoon-font-lock-face-mold-rx
+  (hoon-rx
+   (and (group word (zero-or-more (or word "-")))
+        "/"
+        (group mold)))
+  "Regexp to match name/mold in declarations.")
+
+(defconst hoon-font-lock-kethep-rx
+  (hoon-rx (and "^-  "
+                (opt "{")
+                (group (or mold) (zero-or-more space (or mold)))
+                (opt "}")))
+  "Regexp to match ^- in long form. Note the `or' around
+  `mold'. We need to wrap the imported stuff in that context.")
+
+(defconst hoon-font-lock-kethep-irregular-rx
+  (hoon-rx (and "`" (group mold) "`")))
+
+(defconst hoon-font-lock-kettis-rx
+  (hoon-rx (and "^=" gap (group identifier))))
+
+(defconst hoon-font-lock-kettis-irregular-rx
+  (hoon-rx (and (group identifier) "="))
+  "Regexp of faces.")
+
+(defconst hoon-font-lock-tis-wing-rx
+  (hoon-rx (and (or "=." "=/" "=?") gap (group wing)))
+  "Several runes start with <rune> <gap> wing. Combine these into one regexp.
+Because of =/, this rule must run after the normal mold rule.")
+
+(defconst hoon-font-lock-tisket-rx
+  (hoon-rx (and "=^" gap (group wing) gap (group wing))))
+
 (defconst hoon-font-lock-runes-rx
   ;; This could be `regexp-opt' and added statically for more speed
   (rx (or
-       "||" "|_" "|%" "|:" "|." "|-" "|^" "|+" "|*" "|=" "|?" "|/"
-       "%_" "%:" "%." "%^" "%+" "%-" "%~" "%*" "%="
-       "$|" "$_" "$:" "$%" "$," "$&" "$?" "$+" "$="
-       ":_" ":~" ":/" ":^" ":+" ":-" ":~" ":*"
-       ".+" ".*" ".=" ".?" ".^"
-       "#<" "#>"
-       "^|" "^." "^-" "^+" "^&" "^~" "^=" "^?"
-       "~|" "~$" "~%" "~:" "~/" "~<" "~>" "~#" "~^" "~+" "~&" "~=" "~?" "~!"
-       ";_" ";," ";%" ";:" ";." ";<" ";>" ";-" ";+" ";&" ";~" ";;" ";*" ";=" ";?"
-       "=|" "=." "=^" "=:" "=<" "=>" "=-" "=+" "=*" "=~"
-       "?|" "?:" "?." "?<" "?>" "?-" "?^" "?=" "?+" "?&" "?@" "?~" "?!"
-       "!:" "!," "!;" "!^" "!>" "!="
+       "$@" "$_" "$:" "$%" "$-" "$^" "$?" "$=" "$|" "$," "$&" "$+"
+       "|_" "|:" "|%" "|." "|^" "|-" "|~" "|*" "|=" "|?"
+       ":_" ":^" ":-" ":+" ":~" ":*"
+       "%_" "%." "%-" "%*" "%^" "%+" "%~" "%="
+       ".^" ".+" ".*" ".=" ".?"
+       "^|" "^." "^+" "^-" "^&" "^~" "^=" "^?"
+       "~|" "~_" "~%" "~/" "~<" "~>" "~$" "~+" "~&" "~=" "~?" "~!"
+       ";:" ";/" ";~" ";;"
+       "=|" "=:" "=/" "=;" "=." "=?" "=<" "=-" "=>" "=^" "=+" "=~" "=*" "=,"
+       "?|" "?-" "?:" "?." "?^" "?<" "?>" "?+" "?&" "?@" "?~" "?=" "?!"
+       "!," "!>" "!;" "!=" "!?" "!^" "!:"
        ;; Not technically runes, but we highlight them like that.
        "=="
        "--"
        ))
-  "Regexp of runes")
+  "Regexp of runes.")
+
+(defconst hoon-font-lock-preprocessor-rx
+  (rx (or "/?" "/-" "/+" "//" "/="))
+  "Ford preprocessor 'runes'.")
+
+(defconst hoon-font-lock-zapzap-rx
+  (rx "!!")
+  "Highlight the crash rune in red.")
 
 (defconst hoon-font-lock-numbers-rx
   ;; Numbers are in decimal, binary, hex, base32, or base64, and they must
@@ -101,35 +182,54 @@
 
 (defconst hoon-font-lock-todos-rx
   (rx (or "XX" "XXX" "TODO" "FIXME"))
-  "Regexp of todo notes")
-
-(defconst hoon-font-lock-declarations-rx
-  (rx (and (group "+" (or "+" "-")) space (one-or-more space)
-           (or "$" (and word (one-or-more word)))))
-  "Regexp of declarations")
+  "Regexp of todo notes.")
 
 (defconst hoon-font-lock-symbols-rx
   (rx (and "%" (or (one-or-more (any word "-"))
                    "|" "&" "$" ".n" ".y")))
-  "Regexp of symbols")
+  "Regexp of symbols.")
 
+;; This is a start, but we still occasionally miss some complex mold declarations.
 (defvar hoon-font-lock-keywords
   `(
-    (,hoon-font-lock-declarations-rx 1 font-lock-function-name-face)
+    (,hoon-font-lock-arm-declarations-rx ;; "++  arm"
+     (1 font-lock-constant-face)
+     (2 font-lock-function-name-face))
+    (,hoon-font-lock-face-mold-rx        ;; {name/mold}
+     (1 font-lock-variable-name-face)
+     (2 font-lock-type-face))
+    (,hoon-font-lock-kethep-rx           ;; ^-  mold
+     (1 font-lock-type-face))
+    (,hoon-font-lock-kethep-irregular-rx ;; `mold`
+     (1 font-lock-type-face))
+    (,hoon-font-lock-kettis-rx           ;; ^=  face
+     (1 font-lock-variable-name-face))
+    (,hoon-font-lock-kettis-irregular-rx ;; face=
+     (1 font-lock-variable-name-face))
+    (,hoon-font-lock-tis-wing-rx         ;; (=. =/ =?)  wing
+     (1 font-lock-variable-name-face))
+    (,hoon-font-lock-tisket-rx           ;; =^  wing  wing
+     (1 font-lock-variable-name-face)
+     (2 font-lock-variable-name-face))
+
+    ;; Highlights all other runes in other contexts.
     (,hoon-font-lock-runes-rx . font-lock-constant-face)
+    (,hoon-font-lock-preprocessor-rx . font-lock-preprocessor-face)
+    (,hoon-font-lock-zapzap-rx . font-lock-warning-face)
+
+    ;; Highlight any auras in any other contexts. This must happen after all
+    ;; the above because it would otherwise stop the previous rules' execution.
+    ;; TODO: This rule causes false positives, highlighting ^ in contexts where
+    ;; it's used to reach up one namespace instead of being a mold.
+    ("\\(@\\w*\\)\\|\\^" . font-lock-type-face)
+
+    ;; These highlights don't have any issues.
     (,hoon-font-lock-symbols-rx . font-lock-keyword-face)
-    ;; Atom
-    ("\\(@\\w*\\)\\|\\^" . font-lock-function-name-face)
-    ;; Identifier
-    ;; Branch
-    ;; Type
     (,hoon-font-lock-numbers-rx . font-lock-constant-face)
     (,hoon-font-lock-todos-rx . font-lock-warning-face)
-    ;; String
-    ("\\(%\\w+\\)" (1 font-lock-keyword-face))
-    ("\\(\\w+\\)=" (1 font-lock-variable-name-face))
-    ("[=,]\\(\\w+\\|@\\w*\\)" (1 font-lock-type-face))
-    )
+
+    ;; String (todo: differentiate $x and %x.)
+    ("\\(%\\w+\\)" (1 font-lock-keyword-face)))
   "Keyword highlighting specification for `hoon-mode'.")
 
 (defvar hoon-imenu-generic-expression ".*")
@@ -137,13 +237,15 @@
 (defvar hoon-outline-regexp ":::")
 
 ;;;###autoload
-(define-derived-mode hoon-mode fundamental-mode "Hoon"
+(define-derived-mode hoon-mode prog-mode "Hoon"
   "A major mode for editing Hoon files."
   :syntax-table hoon-mode-syntax-table
   (set (make-local-variable 'comment-start) "::")
+  (set (make-local-variable 'comment-padding) 2)
   (set (make-local-variable 'comment-end) "")
-  (set (make-local-variable 'comment-use-syntax) nil)
-  (set (make-local-variable 'comment-start-skip) "\\(::+\\)\\s *")
+  (set (make-local-variable 'comment-column) 56)   ;; zero based columns
+  (set (make-local-variable 'comment-use-syntax) t)
+  (set (make-local-variable 'comment-start-skip) "\\(::+\\)\\s-*")
   (set (make-local-variable 'font-lock-defaults) '(hoon-font-lock-keywords))
   (set (make-local-variable 'indent-tabs-mode) nil) ;; tabs zutiefst verboten
   (set (make-local-variable 'indent-line-function) 'indent-relative)
