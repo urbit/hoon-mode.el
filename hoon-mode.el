@@ -131,6 +131,12 @@ Because of =/, this rule must run after the normal mold rule.")
 (defconst hoon-font-lock-tisket-rx
   (hoon-rx (and "=^" gap (group wing) gap (group wing))))
 
+(defconst hoon-font-lock-symbols-rx
+  (rx (and "%" (or (one-or-more (any word "-"))
+                   "|" "&" "$" ".n" ".y")))
+  "Regexp of symbols. This must be run before runes, or %.n and %.y will
+ partially be highlighted as runes.")
+
 (defconst hoon-font-lock-runes-rx
   ;; This could be `regexp-opt' and added statically for more speed
   (rx (or
@@ -184,11 +190,6 @@ Because of =/, this rule must run after the normal mold rule.")
   (rx (or "XX" "XXX" "TODO" "FIXME"))
   "Regexp of todo notes.")
 
-(defconst hoon-font-lock-symbols-rx
-  (rx (and "%" (or (one-or-more (any word "-"))
-                   "|" "&" "$" ".n" ".y")))
-  "Regexp of symbols.")
-
 ;; This is a start, but we still occasionally miss some complex mold declarations.
 (defvar hoon-font-lock-keywords
   `(
@@ -212,6 +213,8 @@ Because of =/, this rule must run after the normal mold rule.")
      (1 font-lock-variable-name-face)
      (2 font-lock-variable-name-face))
 
+    (,hoon-font-lock-symbols-rx . font-lock-keyword-face)
+
     ;; Highlights all other runes in other contexts.
     (,hoon-font-lock-runes-rx . font-lock-constant-face)
     (,hoon-font-lock-preprocessor-rx . font-lock-preprocessor-face)
@@ -224,7 +227,6 @@ Because of =/, this rule must run after the normal mold rule.")
     ("\\(@\\w*\\)\\|\\^" . font-lock-type-face)
 
     ;; These highlights don't have any issues.
-    (,hoon-font-lock-symbols-rx . font-lock-keyword-face)
     (,hoon-font-lock-numbers-rx . font-lock-constant-face)
     (,hoon-font-lock-todos-rx . font-lock-warning-face)
 
@@ -249,10 +251,20 @@ Because of =/, this rule must run after the normal mold rule.")
   (set (make-local-variable 'font-lock-defaults) '(hoon-font-lock-keywords))
   (set (make-local-variable 'indent-tabs-mode) nil) ;; tabs zutiefst verboten
   (set (make-local-variable 'indent-line-function) 'indent-relative)
+  (set (make-local-variable 'fill-paragraph-function) 'hoon-fill-paragraph)
   (set (make-local-variable 'imenu-generic-expression)
        hoon-imenu-generic-expression)
   (set (make-local-variable 'outline-regexp) hoon-outline-regexp)
   )
+
+(defun hoon-fill-paragraph (&optional justify)
+  "Only fill inside comments. (It might be neat to auto-convert short to long
+form syntax, but that would take parsing.)"
+  (interactive "P")
+  (or (fill-comment-paragraph justify)
+      ;; Never return nil; `fill-paragraph' will perform its default behavior
+      ;; if we do.
+      t))
 
 ;;; Indentation
 
