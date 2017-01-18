@@ -65,16 +65,18 @@
       (identifier . ,(rx (and lower (zero-or-more (or lower digit "-")))))
       (mold . ,(rx (or "*"
                        "?"
+                       "^"
                        (and "@" (zero-or-more word))
                        (and (opt "$-")
                             "("
                             (one-or-more
-                             (or (or alphanumeric "(" ")" "*" "?" "@" "-" ":")
+                             (or (or alphanumeric "(" ")" "*" "?" "@" "-" ":"
+                                     "^")
                                  ;; Spaces must be single.
                                  (and space (or alphanumeric "(" ")" "*" "?"
-                                                "@" "-" ":"))))
+                                                "@" "-" ":" "^"))))
                             ")")
-                       (and lower (one-or-more (or lower digit "-" ":")))
+                       (and lower (one-or-more (or lower digit "-" ":" "^")))
                        "$-"
                        )))
       (wing . ,(rx (one-or-more (or "." lower digit "-" "+" "<" ">"))))
