@@ -132,7 +132,7 @@ Because of =/, this rule must run after the normal mold rule.")
   (hoon-rx (and "=^" gap (group wing) gap (group wing))))
 
 (defconst hoon-font-lock-symbols-rx
-  (rx (and "%" (or (one-or-more (any word "-"))
+  (rx (and "%" (or (and word (zero-or-more (any word "-")))
                    "|" "&" "$" ".n" ".y")))
   "Regexp of symbols. This must be run before runes, or %.n and %.y will
  partially be highlighted as runes.")
@@ -228,10 +228,7 @@ Because of =/, this rule must run after the normal mold rule.")
 
     ;; These highlights don't have any issues.
     (,hoon-font-lock-numbers-rx . font-lock-constant-face)
-    (,hoon-font-lock-todos-rx . font-lock-warning-face)
-
-    ;; String (todo: differentiate $x and %x.)
-    ("\\(%\\w+\\)" (1 font-lock-keyword-face)))
+    (,hoon-font-lock-todos-rx . font-lock-warning-face))
   "Keyword highlighting specification for `hoon-mode'.")
 
 (defvar hoon-imenu-generic-expression ".*")
