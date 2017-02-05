@@ -126,9 +126,9 @@
   "Regexp of faces.")
 
 (defconst hoon-font-lock-tis-wing-rx
-  (hoon-rx (and (or "=." "=/" "=?") gap (group wing)))
-  "Several runes start with <rune> <gap> wing. Combine these into one regexp.
-Because of =/, this rule must run after the normal mold rule.")
+  (hoon-rx (and (or "=." "=/" "=?" "=*") gap (group wing)))
+  "Several runes start with <rune> <gap> term/wing. Combine these into one
+regexp. Because of =/, this rule must run after the normal mold rule.")
 
 (defconst hoon-font-lock-tisket-rx
   (hoon-rx (and "=^" gap (group wing) gap (group wing))))
