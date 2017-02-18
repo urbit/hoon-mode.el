@@ -2,14 +2,16 @@
 
 ;; Copyright (C) 2014–2016 Urbit
 
-;; Author: 
+;; Author:
 ;;    * Adam Bliss      https://github.com/abliss          <abliss@gmail.com>
-;; Contributors: 
+;; Contributors:
 ;;    * N Gvrnd         https://github.com/ngvrnd
 ;;    * TJamesCorcoran  https://github.com/TJamesCorcoran <jamescorcoran@gmail.com>
 ;;    * Rastus Vernon   https://github.com/rastus-vernon  <rastus.vernon@protonmail.ch>
 ;;    * Elliot Glaysher https://github.com/eglaysher      <erg@google.com>
 ;;
+;; URL: https://github.com/urbit/hoon-mode.el
+;; Version: 0.1
 ;; Keywords: extensions, hoon, nock, urbit, Mars
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -35,18 +37,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-
-(defvar hoon-mode-hook nil)
-
-(defvar hoon-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map "\C-j" 'newline-and-indent)
-    map)
-  "Keymap for `hoon-mode'.")
-
-;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.hoon$" . hoon-mode))
-(add-to-list 'auto-mode-alist '("\\.hook$" . hoon-mode))
 
 (defvar hoon-mode-syntax-table
   (let ((st (make-syntax-table)))
@@ -425,5 +415,8 @@ form syntax, but that would take parsing.)"
 
 
 
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.hoon$" . hoon-mode))
+
 (provide 'hoon-mode)
-;;; hoon.el ends here
+;;; hoon-mode.el ends here
