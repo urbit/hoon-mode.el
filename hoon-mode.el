@@ -50,12 +50,17 @@
 
 (defvar hoon-mode-syntax-table
   (let ((st (make-syntax-table)))
+    ;; Basic quoting support
     (modify-syntax-entry ?\' "\"" st)
-    (modify-syntax-entry ?| "." st)
-    (modify-syntax-entry ?\; "." st)
     (modify-syntax-entry ?\" "\"" st)
+    (modify-syntax-entry ?\\ "\\" st)
+    ;; Hoon comments. Also mark ':' as a normal punctuation character.
     (modify-syntax-entry ?: ". 12b" st)
     (modify-syntax-entry ?\n "> b" st)
+
+    ;; todo: i don't understand why this is here.
+    (modify-syntax-entry ?| "." st)
+    (modify-syntax-entry ?\; "." st)
     st)
   "Syntax table for `hoon-mode'.")
 
@@ -167,6 +172,22 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
   (rx "!!")
   "Highlight the crash rune in red.")
 
+(defun hoon-font-match-comment-code-matcher (end)
+  "Search for embedded `markdown code` in string types which
+should be highlighted. This check ensures that both the ` marks
+occur inside some sort of string."
+  (let ((pos 0)
+        (end-pos 0))
+    (cond ((and (setq pos (search-forward "`" end t))
+                (nth 3 (syntax-ppss pos)))
+           (let ((beg (match-beginning 0)))
+             (cond ((and (setq end-pos (search-forward "`" end t))
+                         (nth 3 (syntax-ppss end-pos)))
+                    (set-match-data (list beg (point)))
+                    t)
+                   (t nil))))
+          (t nil))))
+
 (defconst hoon-font-lock-numbers-rx
   ;; Numbers are in decimal, binary, hex, base32, or base64, and they must
   ;; contain dots (optionally followed by whitespace), as in the German manner.
@@ -222,6 +243,9 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
     (,hoon-font-lock-preprocessor-rx . font-lock-preprocessor-face)
     (,hoon-font-lock-zapzap-rx . font-lock-warning-face)
 
+    ;; Highlight mini-markdown.
+    (hoon-font-match-comment-code-matcher 0 font-lock-constant-face t)
+
     ;; Highlight any auras in any other contexts. This must happen after all
     ;; the above because it would otherwise stop the previous rules' execution.
     ;; TODO: This rule causes false positives, highlighting ^ in contexts where
@@ -237,6 +261,47 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
 
 (defvar hoon-outline-regexp ":::")
 
+(defun hoon-info-docstring-p (state)
+  "Return non-nil if point is in a docstring."
+  (and (nth 3 state)
+       (nth 8 state)
+       (string=
+        (buffer-substring-no-properties (nth 8 state) (+ (nth 8 state) 4))
+        "''':")))
+
+(defun hoon-font-lock-syntactic-face-function (state)
+  "Return syntactic face given STATE."
+  (if (nth 3 state)
+      (if (hoon-info-docstring-p state)
+          font-lock-doc-face
+        font-lock-string-face)
+    font-lock-comment-face))
+
+(defun hoon-syntax-stringify ()
+  "Put `syntax-table' property correctly on doccords. Adapted
+from `python-syntax-stringify', which does a similar trick."
+  (let* ((num-quotes (length (match-string-no-properties 1)))
+         (ppss (prog2
+                   (backward-char num-quotes)
+                   (syntax-ppss)
+                 (forward-char num-quotes)))
+         (string-start (and (not (nth 4 ppss)) (nth 8 ppss)))
+         (quote-starting-pos (- (point) num-quotes))
+         (quote-ending-pos (point)))
+    (if (not string-start)
+        ;; This set of quotes delimit the start of a string.
+        (put-text-property quote-starting-pos (1+ quote-starting-pos)
+                           'syntax-table (string-to-syntax "|"))
+      ;; This set of quotes delimit the end of a string.
+      (put-text-property (1- quote-ending-pos) quote-ending-pos
+                         'syntax-table (string-to-syntax "|")))))
+
+(defconst hoon-syntax-propertize-function
+  (syntax-propertize-rules
+   ((rx (group "''':"))
+    (0 (ignore (hoon-syntax-stringify)))))
+  "Modify the syntax table so we deal with multiline doccords.")
+
 ;;;###autoload
 (define-derived-mode hoon-mode prog-mode "Hoon"
   "A major mode for editing Hoon files."
@@ -247,14 +312,19 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
   (set (make-local-variable 'comment-column) 56)   ;; zero based columns
   (set (make-local-variable 'comment-use-syntax) t)
   (set (make-local-variable 'comment-start-skip) "\\(::+\\)\\s-*")
-  (set (make-local-variable 'font-lock-defaults) '(hoon-font-lock-keywords))
+  (set (make-local-variable 'font-lock-defaults)
+       '(hoon-font-lock-keywords
+         nil nil nil nil
+         (font-lock-syntactic-face-function
+          . hoon-font-lock-syntactic-face-function)))
   (set (make-local-variable 'indent-tabs-mode) nil) ;; tabs zutiefst verboten
   (set (make-local-variable 'indent-line-function) 'indent-relative)
   (set (make-local-variable 'fill-paragraph-function) 'hoon-fill-paragraph)
   (set (make-local-variable 'imenu-generic-expression)
        hoon-imenu-generic-expression)
   (set (make-local-variable 'outline-regexp) hoon-outline-regexp)
-  )
+  (set (make-local-variable 'syntax-propertize-function)
+       hoon-syntax-propertize-function))
 
 (defun hoon-fill-paragraph (&optional justify)
   "Only fill inside comments. (It might be neat to auto-convert short to long
