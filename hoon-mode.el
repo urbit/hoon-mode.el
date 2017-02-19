@@ -2,14 +2,16 @@
 
 ;; Copyright (C) 2014–2016 Urbit
 
-;; Author: 
+;; Author:
 ;;    * Adam Bliss      https://github.com/abliss          <abliss@gmail.com>
-;; Contributors: 
+;; Contributors:
 ;;    * N Gvrnd         https://github.com/ngvrnd
 ;;    * TJamesCorcoran  https://github.com/TJamesCorcoran <jamescorcoran@gmail.com>
 ;;    * Rastus Vernon   https://github.com/rastus-vernon  <rastus.vernon@protonmail.ch>
 ;;    * Elliot Glaysher https://github.com/eglaysher      <erg@google.com>
 ;;
+;; URL: https://github.com/urbit/hoon-mode.el
+;; Version: 0.1
 ;; Keywords: extensions, hoon, nock, urbit, Mars
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -36,26 +38,19 @@
 
 (require 'cl-lib)
 
-(defvar hoon-mode-hook nil)
-
-(defvar hoon-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map "\C-j" 'newline-and-indent)
-    map)
-  "Keymap for `hoon-mode'.")
-
-;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.hoon$" . hoon-mode))
-(add-to-list 'auto-mode-alist '("\\.hook$" . hoon-mode))
-
 (defvar hoon-mode-syntax-table
   (let ((st (make-syntax-table)))
+    ;; Basic quoting support
     (modify-syntax-entry ?\' "\"" st)
-    (modify-syntax-entry ?| "." st)
-    (modify-syntax-entry ?\; "." st)
     (modify-syntax-entry ?\" "\"" st)
+    (modify-syntax-entry ?\\ "\\" st)
+    ;; Hoon comments. Also mark ':' as a normal punctuation character.
     (modify-syntax-entry ?: ". 12b" st)
     (modify-syntax-entry ?\n "> b" st)
+
+    ;; todo: i don't understand why this is here.
+    (modify-syntax-entry ?| "." st)
+    (modify-syntax-entry ?\; "." st)
     st)
   "Syntax table for `hoon-mode'.")
 
@@ -167,6 +162,22 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
   (rx "!!")
   "Highlight the crash rune in red.")
 
+(defun hoon-font-match-comment-code-matcher (end)
+  "Search for embedded `markdown code` in string types which
+should be highlighted. This check ensures that both the ` marks
+occur inside some sort of string."
+  (let ((pos 0)
+        (end-pos 0))
+    (cond ((and (setq pos (search-forward "`" end t))
+                (nth 3 (syntax-ppss pos)))
+           (let ((beg (match-beginning 0)))
+             (cond ((and (setq end-pos (search-forward "`" end t))
+                         (nth 3 (syntax-ppss end-pos)))
+                    (set-match-data (list beg (point)))
+                    t)
+                   (t nil))))
+          (t nil))))
+
 (defconst hoon-font-lock-numbers-rx
   ;; Numbers are in decimal, binary, hex, base32, or base64, and they must
   ;; contain dots (optionally followed by whitespace), as in the German manner.
@@ -222,6 +233,9 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
     (,hoon-font-lock-preprocessor-rx . font-lock-preprocessor-face)
     (,hoon-font-lock-zapzap-rx . font-lock-warning-face)
 
+    ;; Highlight mini-markdown.
+    (hoon-font-match-comment-code-matcher 0 font-lock-constant-face t)
+
     ;; Highlight any auras in any other contexts. This must happen after all
     ;; the above because it would otherwise stop the previous rules' execution.
     ;; TODO: This rule causes false positives, highlighting ^ in contexts where
@@ -237,6 +251,47 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
 
 (defvar hoon-outline-regexp ":::")
 
+(defun hoon-info-docstring-p (state)
+  "Return non-nil if point is in a docstring."
+  (and (nth 3 state)
+       (nth 8 state)
+       (string=
+        (buffer-substring-no-properties (nth 8 state) (+ (nth 8 state) 4))
+        "''':")))
+
+(defun hoon-font-lock-syntactic-face-function (state)
+  "Return syntactic face given STATE."
+  (if (nth 3 state)
+      (if (hoon-info-docstring-p state)
+          font-lock-doc-face
+        font-lock-string-face)
+    font-lock-comment-face))
+
+(defun hoon-syntax-stringify ()
+  "Put `syntax-table' property correctly on doccords. Adapted
+from `python-syntax-stringify', which does a similar trick."
+  (let* ((num-quotes (length (match-string-no-properties 1)))
+         (ppss (prog2
+                   (backward-char num-quotes)
+                   (syntax-ppss)
+                 (forward-char num-quotes)))
+         (string-start (and (not (nth 4 ppss)) (nth 8 ppss)))
+         (quote-starting-pos (- (point) num-quotes))
+         (quote-ending-pos (point)))
+    (if (not string-start)
+        ;; This set of quotes delimit the start of a string.
+        (put-text-property quote-starting-pos (1+ quote-starting-pos)
+                           'syntax-table (string-to-syntax "|"))
+      ;; This set of quotes delimit the end of a string.
+      (put-text-property (1- quote-ending-pos) quote-ending-pos
+                         'syntax-table (string-to-syntax "|")))))
+
+(defconst hoon-syntax-propertize-function
+  (syntax-propertize-rules
+   ((rx (group "''':"))
+    (0 (ignore (hoon-syntax-stringify)))))
+  "Modify the syntax table so we deal with multiline doccords.")
+
 ;;;###autoload
 (define-derived-mode hoon-mode prog-mode "Hoon"
   "A major mode for editing Hoon files."
@@ -247,14 +302,25 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
   (set (make-local-variable 'comment-column) 56)   ;; zero based columns
   (set (make-local-variable 'comment-use-syntax) t)
   (set (make-local-variable 'comment-start-skip) "\\(::+\\)\\s-*")
-  (set (make-local-variable 'font-lock-defaults) '(hoon-font-lock-keywords))
+  (set (make-local-variable 'font-lock-defaults)
+       '(hoon-font-lock-keywords
+         nil nil nil nil
+         (font-lock-syntactic-face-function
+          . hoon-font-lock-syntactic-face-function)))
   (set (make-local-variable 'indent-tabs-mode) nil) ;; tabs zutiefst verboten
   (set (make-local-variable 'indent-line-function) 'indent-relative)
   (set (make-local-variable 'fill-paragraph-function) 'hoon-fill-paragraph)
   (set (make-local-variable 'imenu-generic-expression)
        hoon-imenu-generic-expression)
   (set (make-local-variable 'outline-regexp) hoon-outline-regexp)
-  )
+  (set (make-local-variable 'syntax-propertize-function)
+       hoon-syntax-propertize-function)
+
+  ;; Hoon files often have the same file name in different
+  ;; directories. Previously, this was manually handled by hoon-mode instead of
+  ;; just setting the right variables and letting Emacs handle it.
+  (set (make-local-variable 'uniquify-buffer-name-style) 'forward)
+  (set (make-local-variable 'uniquify-strip-common-suffix) nil))
 
 (defun hoon-fill-paragraph (&optional justify)
   "Only fill inside comments. (It might be neat to auto-convert short to long
@@ -281,79 +347,8 @@ form syntax, but that would take parsing.)"
   "Return the column to which the current line should be indented."
   0) ;;TODO
 
-
-
-;;----------
-;; hack the mode line
-;;----------
-
-;  In the urbit webserver a directory is basically a resource fork,
-;  and contains a single file, always named "hymn.hook". Emacs'
-;  default buffer-naming will, of course, name this hymn.hook.
-;
-;  But if you are visitng two files, 5/hymn.hook and 6/hymn.hook, they
-;  will both appear the same on the mode line.
-;
-;  This sucks, and we'd rather have them appear as "5/hymn.hook" and "6/hymn.hook".
-;
-;  Trivial, right? No.
-
-; The mode line is an interesting beast.
-;   1) it's defined in two variables:
-;        * mode-line-format, which includes in turn the variable...
-;        * mode-line-buffer-identification
-;   2) both of these include "magic" string components which
-;      constitute a micro-DSL (domain specific language), which includes tags like
-;      '%b', indicating that the buffer-name should be substituted in
-;      (see emacs variable docs for 'mode-line-format')
-;   3) this magic DSL is evaluated by lisp funcs that are written in C
-;      and thus which can not be monkey-patched
-;        https://www.gnu.org/software/emacs/manual/html_node/elisp/Primitive-Function-Type.html
-;      translation: "do not sharpen chainsaw while it is running"
-;   4) the commands that are executed when the DSL is interpreted are likewise written in C
-;
-; The upshot is... 
-;
-; WAIT. A better way exists. Instead of hacking the mode-line format,
-; just invoke 'rename-buffer, which also lives down in the C
-; underbelly. Everything falls out nicely.
-
-(defvar hoon-buffer-string "")
-(make-variable-buffer-local 'hoon-buffer-string)
-
-(defun hoon-mode-hack-the-modeline ()
-  ;; (setq mode-line-format
-  ;; 		'("%e" 
-  ;; 		  mode-line-front-space
-  ;; 		  mode-line-mule-info
-  ;; 		  mode-line-client
-  ;; 		  mode-line-modified
-  ;; 		  mode-line-remote
-  ;; 		  mode-line-frame-identification
-  ;; 		  hoon-buffer-string
-  ;; 		  "   "
-  ;; 		  mode-line-position
-  ;; 		  (vc-mode vc-mode)
-  ;; 		  "  "
-  ;; 		  mode-line-modes
-  ;; 		  mode-line-misc-info
-  ;; 		  mode-line-end-spaces))
-  ;; (setq hoon-buffer-string 
-  ;; 		(concat
-  ;; 		 (nth 1 (reverse (split-string (file-name-directory (buffer-file-name)) "/")))
-  ;; 		 "/"
-  ;; 		 (file-name-nondirectory (buffer-file-name))))
-
-  (rename-buffer
-		(concat
-		 (nth 1 (reverse (split-string (file-name-directory (buffer-file-name)) "/")))
-		 "/"
-		 (file-name-nondirectory (buffer-file-name))))
-)
-
-(add-hook 'hoon-mode-hook 'hoon-mode-hack-the-modeline)
-
-
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.hoon$" . hoon-mode))
 
 (provide 'hoon-mode)
-;;; hoon.el ends here
+;;; hoon-mode.el ends here
