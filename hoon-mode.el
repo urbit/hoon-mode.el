@@ -48,9 +48,21 @@
     (modify-syntax-entry ?: ". 12b" st)
     (modify-syntax-entry ?\n "> b" st)
 
-    ;; todo: i don't understand why this is here.
+    ;; Dash is the only 'symbol' in hoon; in Emacs, symbols are characters
+    ;; which can be combined with the 'word' syntax class to form identifiers.
+    (modify-syntax-entry ?- "_" st)
+
+    ;; Put all other characters which could be part of a rune in the
+    ;; punctuation class.
+    (modify-syntax-entry ?! "." st)
+    (modify-syntax-entry '(?\# . ?\&) "." st)
+    (modify-syntax-entry '(?* . ?\,) "." st)
+    (modify-syntax-entry '(?. . ?/) "." st)
+    ;; Note: : is defined in the comment definition above.
+    (modify-syntax-entry '(?\; . ?@) "." st)
+    (modify-syntax-entry '(?^ . ?_) "." st)
     (modify-syntax-entry ?| "." st)
-    (modify-syntax-entry ?\; "." st)
+    (modify-syntax-entry ?~ "." st)
     st)
   "Syntax table for `hoon-mode'.")
 
