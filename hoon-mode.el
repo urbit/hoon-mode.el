@@ -46,6 +46,8 @@
     (modify-syntax-entry ?\\ "\\" st)
     ;; Hoon comments. Also mark ':' as a normal punctuation character.
     (modify-syntax-entry ?: ". 12b" st)
+    (modify-syntax-entry ?< ". 12b" st)
+    (modify-syntax-entry ?> ". 12b" st)
     (modify-syntax-entry ?\n "> b" st)
 
     ;; Dash is the only 'symbol' in hoon; in Emacs, symbols are characters
@@ -58,8 +60,11 @@
     (modify-syntax-entry '(?\# . ?\&) "." st)
     (modify-syntax-entry '(?* . ?\,) "." st)
     (modify-syntax-entry '(?. . ?/) "." st)
-    ;; Note: : is defined in the comment definition above.
-    (modify-syntax-entry '(?\; . ?@) "." st)
+    ;; Note: ':', '<' and '>' are defined in the comment definition above.
+    (modify-syntax-entry ?\; "." st)
+    (modify-syntax-entry ?= "." st)
+    (modify-syntax-entry ?\? "." st)
+    (modify-syntax-entry ?@ "." st)
     (modify-syntax-entry '(?^ . ?_) "." st)
     (modify-syntax-entry ?| "." st)
     (modify-syntax-entry ?~ "." st)
@@ -265,19 +270,20 @@ occur inside some sort of string."
 
 (defun hoon-info-docstring-p (state)
   "Return non-nil if point is in a docstring."
-  (and (nth 3 state)
+  (and (nth 4 state)
        (nth 8 state)
-       (string=
-        (buffer-substring-no-properties (nth 8 state) (+ (nth 8 state) 4))
-        "''':")))
+       (let ((c (buffer-substring-no-properties (nth 8 state)
+                                                (+ (nth 8 state) 2))))
+         (or (string= c ":<")
+             (string= c ":>")))))
 
 (defun hoon-font-lock-syntactic-face-function (state)
   "Return syntactic face given STATE."
-  (if (nth 3 state)
+  (if (nth 4 state)
       (if (hoon-info-docstring-p state)
           font-lock-doc-face
-        font-lock-string-face)
-    font-lock-comment-face))
+        font-lock-comment-face)
+    font-lock-string-face))
 
 (defun hoon-syntax-stringify ()
   "Put `syntax-table' property correctly on doccords. Adapted
@@ -297,12 +303,6 @@ from `python-syntax-stringify', which does a similar trick."
       ;; This set of quotes delimit the end of a string.
       (put-text-property (1- quote-ending-pos) quote-ending-pos
                          'syntax-table (string-to-syntax "|")))))
-
-(defconst hoon-syntax-propertize-function
-  (syntax-propertize-rules
-   ((rx (group "''':"))
-    (0 (ignore (hoon-syntax-stringify)))))
-  "Modify the syntax table so we deal with multiline doccords.")
 
 ;;;###autoload
 (define-derived-mode hoon-mode prog-mode "Hoon"
@@ -325,8 +325,6 @@ from `python-syntax-stringify', which does a similar trick."
   (set (make-local-variable 'imenu-generic-expression)
        hoon-imenu-generic-expression)
   (set (make-local-variable 'outline-regexp) hoon-outline-regexp)
-  (set (make-local-variable 'syntax-propertize-function)
-       hoon-syntax-propertize-function)
 
   ;; Hoon files often have the same file name in different
   ;; directories. Previously, this was manually handled by hoon-mode instead of
