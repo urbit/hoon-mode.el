@@ -44,10 +44,14 @@
     (modify-syntax-entry ?\' "\"" st)
     (modify-syntax-entry ?\" "\"" st)
     (modify-syntax-entry ?\\ "\\" st)
-    ;; Hoon comments. Also mark ':' as a normal punctuation character.
+    ;; Hoon comments. All these are normal punctuation characters, but ':'
+    ;; starts a two-character comment psuedorune, and '<', '>' and '~' can be
+    ;; the second character in that sequence.
     (modify-syntax-entry ?: ". 12b" st)
-    (modify-syntax-entry ?< ". 12b" st)
-    (modify-syntax-entry ?> ". 12b" st)
+    (modify-syntax-entry ?< ". 2b" st)
+    (modify-syntax-entry ?> ". 2b" st)
+    (modify-syntax-entry ?~ ". 2b" st)
+    ;; Terminate hoon comments at the end of lines.
     (modify-syntax-entry ?\n "> b" st)
 
     ;; Dash is the only 'symbol' in hoon; in Emacs, symbols are characters
@@ -60,14 +64,13 @@
     (modify-syntax-entry '(?\# . ?\&) "." st)
     (modify-syntax-entry '(?* . ?\,) "." st)
     (modify-syntax-entry '(?. . ?/) "." st)
-    ;; Note: ':', '<' and '>' are defined in the comment definition above.
+    ;; Note: ':', '<', '>' and '~' are defined in the comment definition above.
     (modify-syntax-entry ?\; "." st)
     (modify-syntax-entry ?= "." st)
     (modify-syntax-entry ?\? "." st)
     (modify-syntax-entry ?@ "." st)
     (modify-syntax-entry '(?^ . ?_) "." st)
     (modify-syntax-entry ?| "." st)
-    (modify-syntax-entry ?~ "." st)
     st)
   "Syntax table for `hoon-mode'.")
 
@@ -182,14 +185,14 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
 (defun hoon-font-match-comment-code-matcher (end)
   "Search for embedded `markdown code` in string types which
 should be highlighted. This check ensures that both the ` marks
-occur inside some sort of string."
+occur inside some sort of comment."
   (let ((pos 0)
         (end-pos 0))
     (cond ((and (setq pos (search-forward "`" end t))
-                (nth 3 (syntax-ppss pos)))
+                (nth 4 (syntax-ppss pos)))
            (let ((beg (match-beginning 0)))
              (cond ((and (setq end-pos (search-forward "`" end t))
-                         (nth 3 (syntax-ppss end-pos)))
+                         (nth 4 (syntax-ppss end-pos)))
                     (set-match-data (list beg (point)))
                     t)
                    (t nil))))
@@ -268,19 +271,20 @@ occur inside some sort of string."
 
 (defvar hoon-outline-regexp ":::")
 
-(defun hoon-info-docstring-p (state)
-  "Return non-nil if point is in a docstring."
+(defun hoon-info-doccord-p (state)
+  "Return non-nil if point is in a doccord."
   (and (nth 4 state)
        (nth 8 state)
        (let ((c (buffer-substring-no-properties (nth 8 state)
                                                 (+ (nth 8 state) 2))))
          (or (string= c ":<")
-             (string= c ":>")))))
+             (string= c ":>")
+             (string= c ":~")))))
 
 (defun hoon-font-lock-syntactic-face-function (state)
   "Return syntactic face given STATE."
   (if (nth 4 state)
-      (if (hoon-info-docstring-p state)
+      (if (hoon-info-doccord-p state)
           font-lock-doc-face
         font-lock-comment-face)
     font-lock-string-face))
