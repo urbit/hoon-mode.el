@@ -111,7 +111,7 @@
 
 
 (defconst hoon-font-lock-arm-declarations-rx
-  (hoon-rx (and (group "+" (or "+" "-")) gap
+  (hoon-rx (and (group "+" (or "+" "-" "=")) gap
                 (group (or "$" identifier))))
   "Regexp of declarations")
 
@@ -168,6 +168,8 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
        "=|" "=:" "=/" "=;" "=." "=?" "=<" "=-" "=>" "=^" "=+" "=~" "=*" "=,"
        "?|" "?-" "?:" "?." "?^" "?<" "?>" "?+" "?&" "?@" "?~" "?=" "?!"
        "!," "!>" "!;" "!=" "!?" "!^" "!:"
+       ;; Chapter separator in cores.
+       "+|"
        ;; Not technically runes, but we highlight them like that.
        "=="
        "--"
@@ -182,20 +184,47 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
   (rx "!!")
   "Highlight the crash rune in red.")
 
-(defun hoon-font-match-comment-code-matcher (end)
-  "Search for embedded `markdown code` in string types which
-should be highlighted. This check ensures that both the ` marks
-occur inside some sort of comment."
+(defun hoon-font-match-inside-open-close (open close end)
+  "Search for a string between an open and close delimiter, and
+set it as the match. This check ensures that both the entire
+phrase occurs inside some sort of comment."
   (let ((pos 0)
         (end-pos 0))
-    (cond ((and (setq pos (search-forward "`" end t))
+    (cond ((and (setq pos (search-forward open end t))
                 (nth 4 (syntax-ppss pos)))
            (let ((beg (match-beginning 0)))
-             (cond ((and (setq end-pos (search-forward "`" end t))
+             (cond ((and (setq end-pos (search-forward close end t))
                          (nth 4 (syntax-ppss end-pos)))
-                    (set-match-data (list beg (point)))
+                    (set-match-data (list (+ 1 beg) (- (point) 1)))
                     t)
                    (t nil))))
+          (t nil))))
+
+(defun hoon-font-match-comment-code-matcher (end)
+  "Finds a string between '`' marks."
+  (hoon-font-match-inside-open-close "`" "`" end))
+
+(defun hoon-font-match-comment-brace-matcher (end)
+  "Finds a string between '{}' marks."
+  (hoon-font-match-inside-open-close "{" "}" end))
+
+(defun hoon-font-match-comment-emphasis-matcher (end)
+  "Finds a string between '*' marks."
+  (hoon-font-match-inside-open-close "*" "*" end))
+
+(defconst hoon-font-match-comment-rx
+  (rx (and (or "++" "%" "~")
+           (one-or-more (or "." lower digit "-" "_")))))
+
+(defun hoon-font-match-comment-literal-matcher (end)
+  "Finds `%literal', `++literal', and `~ship' inside comments. This can't
+be a simple regular expression because we need to check the ppss."
+  (let ((pos 0)
+        (end-pos 0))
+    (cond ((and (setq pos (search-forward-regexp hoon-font-match-comment-rx
+                                                 end t))
+                (nth 4 (syntax-ppss pos)))
+           t)
           (t nil))))
 
 (defconst hoon-font-lock-numbers-rx
@@ -253,8 +282,11 @@ occur inside some sort of comment."
     (,hoon-font-lock-preprocessor-rx . font-lock-preprocessor-face)
     (,hoon-font-lock-zapzap-rx . font-lock-warning-face)
 
-    ;; Highlight mini-markdown.
+    ;; Highlight the markup in decoration strings.
     (hoon-font-match-comment-code-matcher 0 font-lock-constant-face t)
+    (hoon-font-match-comment-brace-matcher 0 font-lock-constant-face t)
+    (hoon-font-match-comment-emphasis-matcher 0 font-lock-constant-face t)
+    (hoon-font-match-comment-literal-matcher 0 font-lock-constant-face t)
 
     ;; Highlight any auras in any other contexts. This must happen after all
     ;; the above because it would otherwise stop the previous rules' execution.
@@ -344,6 +376,11 @@ form syntax, but that would take parsing.)"
       ;; Never return nil; `fill-paragraph' will perform its default behavior
       ;; if we do.
       t))
+
+
+;; Desired functionality: Rebuild comment-indent so that it also does a
+;; set-transient-map that replaces the last ':' with a '>' or '<'
+
 
 ;;; Indentation
 
