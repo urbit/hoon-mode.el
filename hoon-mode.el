@@ -310,8 +310,7 @@ be a simple regular expression because we need to check the ppss."
        (let ((c (buffer-substring-no-properties (nth 8 state)
                                                 (+ (nth 8 state) 2))))
          (or (string= c ":<")
-             (string= c ":>")
-             (string= c ":~")))))
+             (string= c ":>")))))
 
 (defun hoon-font-lock-syntactic-face-function (state)
   "Return syntactic face given STATE."
