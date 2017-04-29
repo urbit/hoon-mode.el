@@ -44,13 +44,33 @@
     (modify-syntax-entry ?\' "\"" st)
     (modify-syntax-entry ?\" "\"" st)
     (modify-syntax-entry ?\\ "\\" st)
-    ;; Hoon comments. Also mark ':' as a normal punctuation character.
+    ;; Hoon comments. All these are normal punctuation characters, but ':'
+    ;; starts a two-character comment psuedorune, and ':', '<', and'>' can be
+    ;; the second character in that sequence.
     (modify-syntax-entry ?: ". 12b" st)
+    (modify-syntax-entry ?< ". 2b" st)
+    (modify-syntax-entry ?> ". 2b" st)
+    ;; Terminate hoon comments at the end of lines.
     (modify-syntax-entry ?\n "> b" st)
 
-    ;; todo: i don't understand why this is here.
-    (modify-syntax-entry ?| "." st)
+    ;; Dash is the only 'symbol' in hoon; in Emacs, symbols are characters
+    ;; which can be combined with the 'word' syntax class to form identifiers.
+    (modify-syntax-entry ?- "_" st)
+
+    ;; Put all other characters which could be part of a rune in the
+    ;; punctuation class.
+    (modify-syntax-entry ?! "." st)
+    (modify-syntax-entry '(?\# . ?\&) "." st)
+    (modify-syntax-entry '(?* . ?\,) "." st)
+    (modify-syntax-entry '(?. . ?/) "." st)
+    ;; Note: ':', '<', and '>' are defined in the comment definition above.
+    (modify-syntax-entry ?~ "." st)
     (modify-syntax-entry ?\; "." st)
+    (modify-syntax-entry ?= "." st)
+    (modify-syntax-entry ?\? "." st)
+    (modify-syntax-entry ?@ "." st)
+    (modify-syntax-entry '(?^ . ?_) "." st)
+    (modify-syntax-entry ?| "." st)
     st)
   "Syntax table for `hoon-mode'.")
 
@@ -91,7 +111,7 @@
 
 
 (defconst hoon-font-lock-arm-declarations-rx
-  (hoon-rx (and (group "+" (or "+" "-")) gap
+  (hoon-rx (and (group "+" (or "+" "-" "=")) gap
                 (group (or "$" identifier))))
   "Regexp of declarations")
 
@@ -148,6 +168,8 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
        "=|" "=:" "=/" "=;" "=." "=?" "=<" "=-" "=>" "=^" "=+" "=~" "=*" "=,"
        "?|" "?-" "?:" "?." "?^" "?<" "?>" "?+" "?&" "?@" "?~" "?=" "?!"
        "!," "!>" "!;" "!=" "!?" "!^" "!:"
+       ;; Chapter separator in cores.
+       "+|"
        ;; Not technically runes, but we highlight them like that.
        "=="
        "--"
@@ -162,20 +184,47 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
   (rx "!!")
   "Highlight the crash rune in red.")
 
-(defun hoon-font-match-comment-code-matcher (end)
-  "Search for embedded `markdown code` in string types which
-should be highlighted. This check ensures that both the ` marks
-occur inside some sort of string."
+(defun hoon-font-match-inside-open-close (open close end)
+  "Search for a string between an open and close delimiter, and
+set it as the match. This check ensures that both the entire
+phrase occurs inside some sort of comment."
   (let ((pos 0)
         (end-pos 0))
-    (cond ((and (setq pos (search-forward "`" end t))
-                (nth 3 (syntax-ppss pos)))
+    (cond ((and (setq pos (search-forward open end t))
+                (nth 4 (syntax-ppss pos)))
            (let ((beg (match-beginning 0)))
-             (cond ((and (setq end-pos (search-forward "`" end t))
-                         (nth 3 (syntax-ppss end-pos)))
-                    (set-match-data (list beg (point)))
+             (cond ((and (setq end-pos (search-forward close end t))
+                         (nth 4 (syntax-ppss end-pos)))
+                    (set-match-data (list (+ 1 beg) (- (point) 1)))
                     t)
                    (t nil))))
+          (t nil))))
+
+(defun hoon-font-match-comment-code-matcher (end)
+  "Finds a string between '`' marks."
+  (hoon-font-match-inside-open-close "`" "`" end))
+
+(defun hoon-font-match-comment-brace-matcher (end)
+  "Finds a string between '{}' marks."
+  (hoon-font-match-inside-open-close "{" "}" end))
+
+(defun hoon-font-match-comment-emphasis-matcher (end)
+  "Finds a string between '*' marks."
+  (hoon-font-match-inside-open-close "*" "*" end))
+
+(defconst hoon-font-match-comment-rx
+  (rx (and (or "++" "%" "~")
+           (one-or-more (or "." lower digit "-" "_")))))
+
+(defun hoon-font-match-comment-literal-matcher (end)
+  "Finds `%literal', `++literal', and `~ship' inside comments. This can't
+be a simple regular expression because we need to check the ppss."
+  (let ((pos 0)
+        (end-pos 0))
+    (cond ((and (setq pos (search-forward-regexp hoon-font-match-comment-rx
+                                                 end t))
+                (nth 4 (syntax-ppss pos)))
+           t)
           (t nil))))
 
 (defconst hoon-font-lock-numbers-rx
@@ -233,8 +282,11 @@ occur inside some sort of string."
     (,hoon-font-lock-preprocessor-rx . font-lock-preprocessor-face)
     (,hoon-font-lock-zapzap-rx . font-lock-warning-face)
 
-    ;; Highlight mini-markdown.
+    ;; Highlight the markup in decoration strings.
     (hoon-font-match-comment-code-matcher 0 font-lock-constant-face t)
+    (hoon-font-match-comment-brace-matcher 0 font-lock-constant-face t)
+    (hoon-font-match-comment-emphasis-matcher 0 font-lock-constant-face t)
+    (hoon-font-match-comment-literal-matcher 0 font-lock-constant-face t)
 
     ;; Highlight any auras in any other contexts. This must happen after all
     ;; the above because it would otherwise stop the previous rules' execution.
@@ -251,21 +303,22 @@ occur inside some sort of string."
 
 (defvar hoon-outline-regexp ":::")
 
-(defun hoon-info-docstring-p (state)
-  "Return non-nil if point is in a docstring."
-  (and (nth 3 state)
+(defun hoon-info-doccord-p (state)
+  "Return non-nil if point is in a doccord."
+  (and (nth 4 state)
        (nth 8 state)
-       (string=
-        (buffer-substring-no-properties (nth 8 state) (+ (nth 8 state) 4))
-        "''':")))
+       (let ((c (buffer-substring-no-properties (nth 8 state)
+                                                (+ (nth 8 state) 2))))
+         (or (string= c ":<")
+             (string= c ":>")))))
 
 (defun hoon-font-lock-syntactic-face-function (state)
   "Return syntactic face given STATE."
-  (if (nth 3 state)
-      (if (hoon-info-docstring-p state)
+  (if (nth 4 state)
+      (if (hoon-info-doccord-p state)
           font-lock-doc-face
-        font-lock-string-face)
-    font-lock-comment-face))
+        font-lock-comment-face)
+    font-lock-string-face))
 
 (defun hoon-syntax-stringify ()
   "Put `syntax-table' property correctly on doccords. Adapted
@@ -285,12 +338,6 @@ from `python-syntax-stringify', which does a similar trick."
       ;; This set of quotes delimit the end of a string.
       (put-text-property (1- quote-ending-pos) quote-ending-pos
                          'syntax-table (string-to-syntax "|")))))
-
-(defconst hoon-syntax-propertize-function
-  (syntax-propertize-rules
-   ((rx (group "''':"))
-    (0 (ignore (hoon-syntax-stringify)))))
-  "Modify the syntax table so we deal with multiline doccords.")
 
 ;;;###autoload
 (define-derived-mode hoon-mode prog-mode "Hoon"
@@ -313,8 +360,6 @@ from `python-syntax-stringify', which does a similar trick."
   (set (make-local-variable 'imenu-generic-expression)
        hoon-imenu-generic-expression)
   (set (make-local-variable 'outline-regexp) hoon-outline-regexp)
-  (set (make-local-variable 'syntax-propertize-function)
-       hoon-syntax-propertize-function)
 
   ;; Hoon files often have the same file name in different
   ;; directories. Previously, this was manually handled by hoon-mode instead of
@@ -330,6 +375,11 @@ form syntax, but that would take parsing.)"
       ;; Never return nil; `fill-paragraph' will perform its default behavior
       ;; if we do.
       t))
+
+
+;; Desired functionality: Rebuild comment-indent so that it also does a
+;; set-transient-map that replaces the last ':' with a '>' or '<'
+
 
 ;;; Indentation
 
