@@ -45,12 +45,11 @@
     (modify-syntax-entry ?\" "\"" st)
     (modify-syntax-entry ?\\ "\\" st)
     ;; Hoon comments. All these are normal punctuation characters, but ':'
-    ;; starts a two-character comment psuedorune, and '<', '>' and '~' can be
+    ;; starts a two-character comment psuedorune, and ':', '<', and'>' can be
     ;; the second character in that sequence.
     (modify-syntax-entry ?: ". 12b" st)
     (modify-syntax-entry ?< ". 2b" st)
     (modify-syntax-entry ?> ". 2b" st)
-    (modify-syntax-entry ?~ ". 2b" st)
     ;; Terminate hoon comments at the end of lines.
     (modify-syntax-entry ?\n "> b" st)
 
@@ -64,7 +63,8 @@
     (modify-syntax-entry '(?\# . ?\&) "." st)
     (modify-syntax-entry '(?* . ?\,) "." st)
     (modify-syntax-entry '(?. . ?/) "." st)
-    ;; Note: ':', '<', '>' and '~' are defined in the comment definition above.
+    ;; Note: ':', '<', and '>' are defined in the comment definition above.
+    (modify-syntax-entry ?~ "." st)
     (modify-syntax-entry ?\; "." st)
     (modify-syntax-entry ?= "." st)
     (modify-syntax-entry ?\? "." st)
