@@ -48,9 +48,19 @@
     (modify-syntax-entry ?: ". 12b" st)
     (modify-syntax-entry ?\n "> b" st)
 
-    ;; todo: i don't understand why this is here.
+    ;; Add dash to the symbol class since it can be part of identifier.
+    (modify-syntax-entry ?- "_" st)
+
+    ;; Put all other characters which can be part of runes in the punctuation
+    ;; class so that forward and backward work properly.
+    (modify-syntax-entry ?! "." st)
+    (modify-syntax-entry '(?\# . ?\&) "." st)
+    (modify-syntax-entry '(?* . ?\,) "." st)
+    (modify-syntax-entry '(?. . ?/) "." st)
+    (modify-syntax-entry '(?\; . ?@) "." st)
+    (modify-syntax-entry '(?^ . ?_) "." st)
     (modify-syntax-entry ?| "." st)
-    (modify-syntax-entry ?\; "." st)
+    (modify-syntax-entry ?~ "." st)
     st)
   "Syntax table for `hoon-mode'.")
 
