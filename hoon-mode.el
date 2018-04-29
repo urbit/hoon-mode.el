@@ -260,6 +260,11 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
        hoon-imenu-generic-expression)
   (set (make-local-variable 'outline-regexp) hoon-outline-regexp)
 
+  ;; Hoon files shouldn't have empty lines, but emacs expects them for
+  ;; navigation. Treat lines which are just `comment-start' at any margin as
+  ;; blank lines for paragraph navigation purposes.
+  (set (make-local-variable 'paragraph-start) "\\([ \t]*\:\:\\)*[ \t\f]*$")
+
   ;; Hoon files often have the same file name in different
   ;; directories. Previously, this was manually handled by hoon-mode instead of
   ;; just setting the right variables and letting Emacs handle it.
