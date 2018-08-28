@@ -318,16 +318,16 @@ form syntax, but that would take parsing.)"
 (defun eval-region-in-urb ()
   (interactive)
   (shell-command
-   (concat hoon-urb-path " " hoon-urb-args " \""
-	   (buffer-substring (region-beginning) (region-end))
-	   "\" &")))
+   (concat hoon-urb-path " " hoon-urb-args " "
+	   (shell-quote-argument (buffer-substring (region-beginning) (region-end)))
+	   " &")))
 
 (defun eval-buffer-in-urb ()
   (interactive)
   (shell-command
-   (concat hoon-urb-path " " hoon-urb-args " \""
-	   (buffer-substring-no-properties (point-min) (point-max))
-	   "\" &")))
+   (concat hoon-urb-path " " hoon-urb-args " "
+	   (shell-quote-argument (buffer-substring-no-properties (point-min) (point-max)))
+	   " &")))
 
 (define-key hoon-mode-map (kbd "C-c r") 'eval-region-in-urb)
 
