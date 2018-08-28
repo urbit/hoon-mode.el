@@ -9,6 +9,7 @@
 ;;    * TJamesCorcoran  https://github.com/TJamesCorcoran <jamescorcoran@gmail.com>
 ;;    * Rastus Vernon   https://github.com/rastus-vernon  <rastus.vernon@protonmail.ch>
 ;;    * Elliot Glaysher https://github.com/eglaysher      <erg@google.com>
+;;    * David Kerschner https://github.com/baudtack      <dkerschner@hcoop.net>
 ;;
 ;; URL: https://github.com/urbit/hoon-mode.el
 ;; Version: 0.1
@@ -298,6 +299,39 @@ form syntax, but that would take parsing.)"
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.hoon$" . hoon-mode))
+
+(defgroup hoon nil
+  "hoon mode for emacs"
+  :prefix "hoon-"
+  :group 'tools)
+
+(defcustom hoon-urb-path "/usr/bin/urb"
+  "Path to urb"
+  :group 'hoon
+  :type 'string)
+
+(defcustom hoon-urb-args "-d"
+  "args for urb"
+  :group 'hoon
+  :type 'string)
+
+(defun eval-region-in-urb ()
+  (interactive)
+  (shell-command
+   (concat hoon-urb-path " " hoon-urb-args " \""
+	   (buffer-substring (region-beginning) (region-end))
+	   "\" &")))
+
+(defun eval-buffer-in-urb ()
+  (interactive)
+  (shell-command
+   (concat hoon-urb-path " " hoon-urb-args " \""
+	   (buffer-substring-no-properties (point-min) (point-max))
+	   "\" &")))
+
+(define-key hoon-mode-map (kbd "C-c r") 'eval-region-in-urb)
+
+(define-key hoon-mode-map (kbd "C-c b") 'eval-buffer-in-urb)
 
 (provide 'hoon-mode)
 ;;; hoon-mode.el ends here
