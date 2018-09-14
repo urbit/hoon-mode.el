@@ -102,7 +102,7 @@
 
 
 (defconst hoon-font-lock-arm-declarations-rx
-  (hoon-rx (and (group "+" (or "+" "-")) gap
+  (hoon-rx (and (group "+" (or "+" "-" "$")) gap
                 (group (or "$" identifier))))
   "Regexp of declarations")
 
