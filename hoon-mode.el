@@ -3,13 +3,14 @@
 ;; Copyright (C) 2014–2016 Urbit
 
 ;; Author:
-;;    * Adam Bliss      https://github.com/abliss          <abliss@gmail.com>
+;;    * Adam Bliss        https://github.com/abliss         <abliss@gmail.com>
 ;; Contributors:
-;;    * N Gvrnd         https://github.com/ngvrnd
-;;    * TJamesCorcoran  https://github.com/TJamesCorcoran <jamescorcoran@gmail.com>
-;;    * Rastus Vernon   https://github.com/rastus-vernon  <rastus.vernon@protonmail.ch>
-;;    * Elliot Glaysher https://github.com/eglaysher      <erg@google.com>
-;;    * David Kerschner https://github.com/baudtack      <dkerschner@hcoop.net>
+;;    * N Gvrnd           https://github.com/ngvrnd
+;;    * TJamesCorcoran    https://github.com/TJamesCorcoran <jamescorcoran@gmail.com>
+;;    * Rastus Vernon     https://github.com/rastus-vernon  <rastus.vernon@protonmail.ch>
+;;    * Elliot Glaysher   https://github.com/eglaysher      <erg@google.com>
+;;    * David Kerschner   https://github.com/baudtack       <dkerschner@hcoop.net>
+;;    * Johnathan Maudlin https://github.com/jcmdln         <jcmdln@gmail.com>
 ;;
 ;; URL: https://github.com/urbit/hoon-mode.el
 ;; Version: 0.1
@@ -315,23 +316,19 @@ form syntax, but that would take parsing.)"
   :group 'hoon
   :type 'string)
 
-(defun eval-region-in-urb ()
+(defun hoon-eval-region-in-urb ()
   (interactive)
   (shell-command
    (concat hoon-urb-path " " hoon-urb-args " "
 	   (shell-quote-argument (buffer-substring (region-beginning) (region-end)))
 	   " &")))
 
-(defun eval-buffer-in-urb ()
+(defun hoon-eval-buffer-in-urb ()
   (interactive)
   (shell-command
    (concat hoon-urb-path " " hoon-urb-args " "
 	   (shell-quote-argument (buffer-substring-no-properties (point-min) (point-max)))
 	   " &")))
-
-(define-key hoon-mode-map (kbd "C-c r") 'eval-region-in-urb)
-
-(define-key hoon-mode-map (kbd "C-c b") 'eval-buffer-in-urb)
 
 (provide 'hoon-mode)
 ;;; hoon-mode.el ends here
