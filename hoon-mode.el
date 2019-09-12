@@ -103,7 +103,7 @@
 
 
 (defconst hoon-font-lock-arm-declarations-rx
-  (hoon-rx (and (group "+" (or "+" "-" "$")) gap
+  (hoon-rx (and (group "+" (or "+" "-" "$" "*")) gap
                 (group (or "$" identifier))))
   "Regexp of declarations")
 
@@ -150,7 +150,7 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
   ;; This could be `regexp-opt' and added statically for more speed
   (rx (or
        "$@" "$_" "$:" "$%" "$-" "$^" "$?" "$=" "$|" "$," "$&" "$+"
-       "|_" "|:" "|%" "|." "|^" "|-" "|~" "|*" "|=" "|?"
+       "|_" "|:" "|%" "|." "|^" "|-" "|~" "|*" "|=" "|?" "|$"
        ":_" ":^" ":-" ":+" ":~" ":*"
        "%_" "%." "%-" "%*" "%^" "%+" "%~" "%="
        ".^" ".+" ".*" ".=" ".?"
