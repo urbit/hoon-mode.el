@@ -306,27 +306,27 @@ form syntax, but that would take parsing.)"
   :prefix "hoon-"
   :group 'tools)
 
-(defcustom hoon-urb-path "/usr/bin/urb"
-  "Path to urb"
+(defcustom hoon-herb-path "/usr/bin/herb"
+  "Path to herb"
   :group 'hoon
   :type 'string)
 
-(defcustom hoon-urb-args "-d"
-  "args for urb"
+(defcustom hoon-herb-args "-d"
+  "args for herb"
   :group 'hoon
   :type 'string)
 
-(defun hoon-eval-region-in-urb ()
+(defun hoon-eval-region-in-herb ()
   (interactive)
   (shell-command
-   (concat hoon-urb-path " " hoon-urb-args " "
+   (concat hoon-herb-path " " hoon-herb-args " "
 	   (shell-quote-argument (buffer-substring (region-beginning) (region-end)))
 	   " &")))
 
-(defun hoon-eval-buffer-in-urb ()
+(defun hoon-eval-buffer-in-herb ()
   (interactive)
   (shell-command
-   (concat hoon-urb-path " " hoon-urb-args " "
+   (concat hoon-herb-path " " hoon-herb-args " "
 	   (shell-quote-argument (buffer-substring-no-properties (point-min) (point-max)))
 	   " &")))
 
