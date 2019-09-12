@@ -12,5 +12,5 @@ Add the following to your configuration:
 
 	(add-hook 'hoon-mode
 	          (lambda ()
-	            (define-key hoon-mode-map (kbd "C-c r") 'hoon-eval-region-in-urb)
-	            (define-key hoon-mode-map (kbd "C-c b") 'hoon-eval-buffer-in-urb)))
+	            (define-key hoon-mode-map (kbd "C-c r") 'hoon-eval-region-in-herb)
+	            (define-key hoon-mode-map (kbd "C-c b") 'hoon-eval-buffer-in-herb)))
