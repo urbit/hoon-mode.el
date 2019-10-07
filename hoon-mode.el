@@ -160,6 +160,7 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
        "=|" "=:" "=/" "=;" "=." "=?" "=<" "=-" "=>" "=^" "=+" "=~" "=*" "=,"
        "?|" "?-" "?:" "?." "?^" "?<" "?>" "?+" "?&" "?@" "?~" "?=" "?!"
        "!," "!>" "!;" "!=" "!?" "!^" "!:"
+       "+|"
        ;; Not technically runes, but we highlight them like that.
        "=="
        "--"
