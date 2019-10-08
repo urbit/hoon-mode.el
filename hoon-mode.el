@@ -107,12 +107,29 @@
                 (group (or "$" identifier))))
   "Regexp of declarations")
 
-(defconst hoon-font-lock-face-mold-rx
+
+(defconst hoon-font-lock-face-mold-old-rx
   (hoon-rx
    (and (group word (zero-or-more (or word "-")))
         "/"
         (group mold)))
-  "Regexp to match name/mold in declarations.")
+  "Regexp to old style name/mold in declarations.")
+
+(defconst hoon-font-lock-tisfas-rx
+  (hoon-rx (and "=/" gap (group wing) (opt "=") (opt (group mold))))
+  "Regexp to match =/.")
+
+(defconst hoon-font-lock-bar-mold-rx
+  (hoon-rx (group (or "|=" "=|")))
+  "Regexp to match |= or =|. Used for syntax highlighting the molds on
+lines like |=  [a=@t b=wire].")
+
+(defconst hoon-font-lock-face-mold-rx
+  (hoon-rx
+   (and (group word (zero-or-more (or word "-")))
+        "="
+        (group mold)))
+  "Regexp to match name=mold in declarations")
 
 (defconst hoon-font-lock-kethep-rx
   (hoon-rx (and "^-  "
@@ -132,13 +149,19 @@
   (hoon-rx (and (group identifier) "="))
   "Regexp of faces.")
 
+(defconst hoon-font-lock-mold-shorthand-rx
+  (hoon-rx (and (or "[" "(" line-start space)
+                (group (and (and "=" identifier)
+                            (zero-or-more (or "." ":" identifier))))))
+  "Regexp to match =same-name-as-mold in declarations")
+
 (defconst hoon-font-lock-tis-wing-rx
-  (hoon-rx (and (or "=." "=/" "=?" "=*") gap (group wing)))
+  (hoon-rx (and (or "=." "=?" "=*") gap (group wing)))
   "Several runes start with <rune> <gap> term/wing. Combine these into one
 regexp. Because of =/, this rule must run after the normal mold rule.")
 
 (defconst hoon-font-lock-tisket-rx
-  (hoon-rx (and "=^" gap (group wing) gap (group wing))))
+  (hoon-rx (and "=^" gap (group-n 1 wing) (opt "=") (opt (group-n 3 mold)) gap (group-n 2 wing))))
 
 (defconst hoon-font-lock-symbols-rx
   (rx (and "%" (or (and word (zero-or-more (any word "-")))
@@ -206,9 +229,18 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
     (,hoon-font-lock-arm-declarations-rx ;; "++  arm"
      (1 font-lock-constant-face)
      (2 font-lock-function-name-face))
-    (,hoon-font-lock-face-mold-rx        ;; {name/mold}
+    (,hoon-font-lock-face-mold-old-rx    ;; name/mold
      (1 font-lock-variable-name-face)
      (2 font-lock-type-face))
+    (,hoon-font-lock-bar-mold-rx         ;; (=| |=)  name=mold
+     (1 font-lock-constant-face)
+     (,hoon-font-lock-face-mold-rx
+      nil
+      nil
+      (1 font-lock-variable-name-face)
+      (2 font-lock-type-face)))
+    (,hoon-font-lock-mold-shorthand-rx   ;; =same-name-as-mold
+     (1 font-lock-variable-name-face))
     (,hoon-font-lock-kethep-rx           ;; ^-  mold
      (1 font-lock-type-face))
     (,hoon-font-lock-kethep-irregular-rx ;; `mold`
@@ -217,11 +249,15 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
      (1 font-lock-variable-name-face))
     (,hoon-font-lock-kettis-irregular-rx ;; face=
      (1 font-lock-variable-name-face))
-    (,hoon-font-lock-tis-wing-rx         ;; (=. =/ =?)  wing
+    (,hoon-font-lock-tisfas-rx           ;; =/  wing=@t
+     (1 font-lock-variable-name-face
+     (2 font-lock-type-face nil t)))
+    (,hoon-font-lock-tis-wing-rx         ;; (=. =?)  wing
      (1 font-lock-variable-name-face))
-    (,hoon-font-lock-tisket-rx           ;; =^  wing  wing
+    (,hoon-font-lock-tisket-rx           ;; =^  wing=@t  wing
      (1 font-lock-variable-name-face)
-     (2 font-lock-variable-name-face))
+     (2 font-lock-variable-name-face)
+     (3 font-lock-type-face nil t))
 
     (,hoon-font-lock-symbols-rx . font-lock-keyword-face)
 
