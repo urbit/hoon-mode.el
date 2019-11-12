@@ -14,3 +14,12 @@ Add the following to your configuration:
 	          (lambda ()
 	            (define-key hoon-mode-map (kbd "C-c r") 'hoon-eval-region-in-herb)
 	            (define-key hoon-mode-map (kbd "C-c b") 'hoon-eval-buffer-in-herb)))
+
+### Language Server
+Install the [Hoon Language
+Server](https://github.com/urbit/hoon-language-server)
+and add the following to your configuration
+``` emacs-lisp
+(add-hook 'hoon-mode #'lsp)
+```
+

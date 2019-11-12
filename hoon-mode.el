@@ -353,6 +353,27 @@ form syntax, but that would take parsing.)"
   :group 'hoon
   :type 'string)
 
+(defcustom hoon-lsp-enable nil
+  "Enable hoon-language-server support. NOTE: requires lsp-mode and hoon-language-server to be installed"
+  :group 'hoon
+  :type 'boolean)
+
+(defcustom hoon-lsp-args ""
+  "args for language server"
+  :group 'hoon
+  :type 'string)
+
+(eval-after-load "lsp-mode"
+  (if hoon-lsp-enable
+    '(progn
+      (add-to-list 'lsp-language-id-configuration '(hoon-mode . "hoon"))
+      (lsp-register-client
+        (make-lsp-client :new-connection (lsp-stdio-connection "hoon-language-server")
+                         :major-modes '(hoon-mode)
+                         :server-id 'hoon-ls))
+      (add-hook 'hoon-mode-hook #'lsp))
+  '()))
+
 (defun hoon-eval-region-in-herb ()
   (interactive)
   (shell-command
