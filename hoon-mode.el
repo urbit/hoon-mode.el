@@ -78,10 +78,10 @@
                             "("
                             (one-or-more
                              (or (or alphanumeric "(" ")" "*" "?" "@" "-" ":"
-                                     "^")
+                                     "^" "_")
                                  ;; Spaces must be single.
                                  (and space (or alphanumeric "(" ")" "*" "?"
-                                                "@" "-" ":" "^"))))
+                                                "@" "-" ":" "^" "_"))))
                             ")")
                        (and lower (one-or-more (or lower digit "-" ":" "^")))
                        "$-"
@@ -182,7 +182,7 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
        ";:" ";/" ";~" ";;"
        "=|" "=:" "=/" "=;" "=." "=?" "=<" "=-" "=>" "=^" "=+" "=~" "=*" "=,"
        "?|" "?-" "?:" "?." "?^" "?<" "?>" "?+" "?&" "?@" "?~" "?=" "?!"
-       "!," "!>" "!;" "!=" "!?" "!^" "!:"
+       "!," "!>" "!;" "!=" "!?" "!^" "!:" "!<"
        "+|"
        ;; Not technically runes, but we highlight them like that.
        "=="
@@ -358,8 +358,13 @@ form syntax, but that would take parsing.)"
   :group 'hoon
   :type 'boolean)
 
-(defcustom hoon-lsp-args ""
-  "args for language server"
+(defcustom hoon-lsp-port "8080"
+  "Port for language server"
+  :group 'hoon
+  :type 'string)
+
+(defcustom hoon-lsp-delay "0"
+  "Delay for language server"
   :group 'hoon
   :type 'string)
 
@@ -368,7 +373,10 @@ form syntax, but that would take parsing.)"
     '(progn
       (add-to-list 'lsp-language-id-configuration '(hoon-mode . "hoon"))
       (lsp-register-client
-        (make-lsp-client :new-connection (lsp-stdio-connection "hoon-language-server")
+        (make-lsp-client :new-connection
+                        (lsp-stdio-connection `("hoon-language-server"
+                                                ,(concat "-p " hoon-lsp-port)
+                                                ,(concat "-d " hoon-lsp-delay)))
                          :major-modes '(hoon-mode)
                          :server-id 'hoon-ls))
       (add-hook 'hoon-mode-hook #'lsp))
