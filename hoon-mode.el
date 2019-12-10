@@ -78,10 +78,10 @@
                             "("
                             (one-or-more
                              (or (or alphanumeric "(" ")" "*" "?" "@" "-" ":"
-                                     "^")
+                                     "^" "_")
                                  ;; Spaces must be single.
                                  (and space (or alphanumeric "(" ")" "*" "?"
-                                                "@" "-" ":" "^"))))
+                                                "@" "-" ":" "^" "_"))))
                             ")")
                        (and lower (one-or-more (or lower digit "-" ":" "^")))
                        "$-"
