@@ -6,6 +6,12 @@ ecosystem.
 ## Installing
 Currently this package must be installed manually.
 
+For Doom Emacs, add the following to `/.doom.d/packages.el`:
+
+``` emacs-lisp
+(package! hoon-mode :recipe (:host github :repo "urbit/hoon-mode.el"))
+```
+
 
 ## Configuring
 Add the following to your configuration:
