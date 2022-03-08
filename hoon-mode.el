@@ -362,6 +362,14 @@ form syntax, but that would take parsing.)"
   "Port for language server"
   :group 'hoon
   :type 'string)
+(defcustom hoon-lsp-code "miswyt-palnet-palnet-palnet"
+  "Port for language server"
+  :group 'hoon
+  :type 'string)
+(defcustom hoon-lsp-planet "sampel-palnet"
+  "Port for language server"
+  :group 'hoon
+  :type 'string)
 
 (defcustom hoon-lsp-delay "0"
   "Delay for language server"
@@ -375,8 +383,10 @@ form syntax, but that would take parsing.)"
       (lsp-register-client
         (make-lsp-client :new-connection
                         (lsp-stdio-connection `("hoon-language-server"
-                                                ,(concat "-p " hoon-lsp-port)
-                                                ,(concat "-d " hoon-lsp-delay)))
+                                                ,(concat "-p=" hoon-lsp-port)
+                                                ,(concat "-s=" hoon-lsp-planet)
+                                                ,(concat "-c=" hoon-lsp-code)
+                                                ,(concat "-d=" hoon-lsp-delay)))
                          :major-modes '(hoon-mode)
                          :server-id 'hoon-ls))
       (add-hook 'hoon-mode-hook #'lsp))
