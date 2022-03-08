@@ -363,11 +363,11 @@ form syntax, but that would take parsing.)"
   :group 'hoon
   :type 'string)
 (defcustom hoon-lsp-code "miswyt-palnet-palnet-palnet"
-  "Port for language server"
+  "+code for planet running language-server"
   :group 'hoon
   :type 'string)
 (defcustom hoon-lsp-planet "sampel-palnet"
-  "Port for language server"
+  "Planet name running language-server"
   :group 'hoon
   :type 'string)
 
