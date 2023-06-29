@@ -445,7 +445,7 @@ user to interact with a running ship from Earth."
     (cdar
      (seq-filter
       #'(lambda (v)
-          (hoon-runep rune (cdr (car v)))) dict)))))
+          (hoon-rune-p rune (cdr (car v)))) dict)))))
 
 (defconst hoon-things (define-thing-chars hoon-things "-@|%$:.^;~=?_*#!+<>[:alpha:]")
       "Regex defining which strings should be sent to eldoc.")
