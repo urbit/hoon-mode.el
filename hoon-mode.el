@@ -433,7 +433,7 @@ user to interact with a running ship from Earth."
     "hoon-dictionary.json"
     (file-name-directory load-file-name))))
 
-(defun hoon-runep (rune vector)
+(defun hoon-rune-p (rune vector)
   "Predicate to check if RUNE is present in VECTOR."
   (seq-filter (lambda (v) (string= rune v)) vector))
 
