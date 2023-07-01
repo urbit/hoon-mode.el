@@ -1,6 +1,6 @@
-;;; hoon-mode.el --- Major mode for editing hoon files for urbit
+;;; hoon-mode.el --- Major mode for editing hoon files for urbit. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2014–2016 Urbit
+;; Copyright (C) 2014–2023 Urbit
 
 ;; Author:
 ;;    * Adam Bliss        https://github.com/abliss         <abliss@gmail.com>
@@ -33,12 +33,16 @@
 
 ;;; Commentary:
 
-;; This is my first Major Mode, so don't expect much. It's heavily based on
-;; SampleMode from the emacs wiki.
+;; This is my first Major Mode, so don't expect much.  It's heavily based on
+;; SampleMode from the Emacs wiki.
 
 ;;; Code:
 
 (require 'cl-lib)
+(require 'eldoc)
+(require 'thingatpt)
+(require 'json)
+(require 'shr)
 
 (defvar hoon-mode-syntax-table
   (let ((st (make-syntax-table)))
@@ -121,8 +125,8 @@
 
 (defconst hoon-font-lock-bar-mold-rx
   (hoon-rx (group (or "|=" "=|")))
-  "Regexp to match |= or =|. Used for syntax highlighting the molds on
-lines like |=  [a=@t b=wire].")
+  "Regexp to match |= or =|.
+Used for syntax highlighting the molds on lines like |=  [a=@t b=wire].")
 
 (defconst hoon-font-lock-face-mold-rx
   (hoon-rx
@@ -136,8 +140,9 @@ lines like |=  [a=@t b=wire].")
                 (opt "{")
                 (group (or mold) (zero-or-more space (or mold)))
                 (opt "}")))
-  "Regexp to match ^- in long form. Note the `or' around
-  `mold'. We need to wrap the imported stuff in that context.")
+  "Regexp to match ^- in long form.
+Note the `or' around `mold'.
+We need to wrap the imported stuff in that context.")
 
 (defconst hoon-font-lock-kethep-irregular-rx
   (hoon-rx (and "`" (group mold) "`")))
@@ -153,12 +158,13 @@ lines like |=  [a=@t b=wire].")
   (hoon-rx (and (or "[" "(" line-start space)
                 (group (and (and "=" identifier)
                             (zero-or-more (or "." ":" identifier))))))
-  "Regexp to match =same-name-as-mold in declarations")
+  "Regexp to match =same-name-as-mold in declarations.")
 
 (defconst hoon-font-lock-tis-wing-rx
   (hoon-rx (and (or "=." "=?" "=*") gap (group wing)))
-  "Several runes start with <rune> <gap> term/wing. Combine these into one
-regexp. Because of =/, this rule must run after the normal mold rule.")
+  "Several runes start with <rune> <gap> term/wing.
+  Combine these into one regexp.  Because of =/,
+  this rule must run after the normal mold rule.")
 
 (defconst hoon-font-lock-tisket-rx
   (hoon-rx (and "=^" gap (group-n 1 wing) (opt "=") (opt (group-n 3 mold)) gap (group-n 2 wing))))
@@ -166,8 +172,9 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
 (defconst hoon-font-lock-symbols-rx
   (rx (and "%" (or (and word (zero-or-more (any word "-")))
                    "|" "&" "$" ".n" ".y")))
-  "Regexp of symbols. This must be run before runes, or %.n and %.y will
- partially be highlighted as runes.")
+  "Regexp of symbols.
+  This must be run before runes, or %.n and %.y will partially
+  be highlighted as runes.")
 
 (defconst hoon-font-lock-runes-rx
   ;; This could be `regexp-opt' and added statically for more speed
@@ -186,13 +193,12 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
        "+|"
        ;; Not technically runes, but we highlight them like that.
        "=="
-       "--"
-       ))
+       "--"))
   "Regexp of runes.")
 
 (defconst hoon-font-lock-preprocessor-rx
   (rx (or "/?" "/-" "/+" "//" "/="))
-  "Ford preprocessor 'runes'.")
+  "Ford preprocessor `runes'.")
 
 (defconst hoon-font-lock-zapzap-rx
   (rx "!!")
@@ -308,11 +314,15 @@ regexp. Because of =/, this rule must run after the normal mold rule.")
   ;; directories. Previously, this was manually handled by hoon-mode instead of
   ;; just setting the right variables and letting Emacs handle it.
   (set (make-local-variable 'uniquify-buffer-name-style) 'forward)
-  (set (make-local-variable 'uniquify-strip-common-suffix) nil))
+  (set (make-local-variable 'uniquify-strip-common-suffix) nil)
+  ;; Eldoc support
+  (set (make-local-variable 'eldoc-documentation-function)
+       'hoon-mode-eldoc-function))
 
 (defun hoon-fill-paragraph (&optional justify)
-  "Only fill inside comments. (It might be neat to auto-convert short to long
-form syntax, but that would take parsing.)"
+  "Only fill inside comments.
+Optionally JUSTIFY.  \(It might be neat to auto-convert
+to long form syntax, but that would take parsing.)"
   (interactive "P")
   (or (fill-comment-paragraph justify)
       ;; Never return nil; `fill-paragraph' will perform its default behavior
@@ -339,72 +349,132 @@ form syntax, but that would take parsing.)"
 (add-to-list 'auto-mode-alist '("\\.hoon$" . hoon-mode))
 
 (defgroup hoon nil
-  "hoon mode for emacs"
+  "Hoon mode for Emacs."
   :prefix "hoon-"
   :group 'tools)
 
 (defcustom hoon-herb-path "/usr/bin/herb"
-  "Path to herb"
+  "Path to herb."
   :group 'hoon
   :type 'string)
 
 (defcustom hoon-herb-args "-d"
-  "args for herb"
+  "Args for herb."
   :group 'hoon
   :type 'string)
 
 (defcustom hoon-lsp-enable nil
-  "Enable hoon-language-server support. NOTE: requires lsp-mode and hoon-language-server to be installed"
+  "Enable hoon-language-server support.
+NOTE: requires `lsp-mode' and hoon-language-server to be installed."
   :group 'hoon
   :type 'boolean)
 
 (defcustom hoon-lsp-port "8080"
-  "Port for language server"
+  "Port for language server."
   :group 'hoon
   :type 'string)
 (defcustom hoon-lsp-code "miswyt-palnet-palnet-palnet"
-  "+code for planet running language-server"
+  "+code for planet running language-server."
   :group 'hoon
   :type 'string)
 (defcustom hoon-lsp-planet "sampel-palnet"
-  "Planet name running language-server"
+  "Planet name running language-server."
   :group 'hoon
   :type 'string)
 
 (defcustom hoon-lsp-delay "0"
-  "Delay for language server"
+  "Delay for language server."
   :group 'hoon
   :type 'string)
 
 (eval-after-load "lsp-mode"
   (if hoon-lsp-enable
-    '(progn
-      (add-to-list 'lsp-language-id-configuration '(hoon-mode . "hoon"))
-      (lsp-register-client
-        (make-lsp-client :new-connection
-                        (lsp-stdio-connection `("hoon-language-server"
-                                                ,(concat "-p=" hoon-lsp-port)
-                                                ,(concat "-s=" hoon-lsp-planet)
-                                                ,(concat "-c=" hoon-lsp-code)
-                                                ,(concat "-d=" hoon-lsp-delay)))
-                         :major-modes '(hoon-mode)
-                         :server-id 'hoon-ls))
-      (add-hook 'hoon-mode-hook #'lsp))
-  '()))
+      '(progn
+         (add-to-list 'lsp-language-id-configuration '(hoon-mode . "hoon"))
+         (lsp-register-client
+          (make-lsp-client :new-connection
+                           (lsp-stdio-connection `("hoon-language-server"
+                                                   ,(concat "-p=" hoon-lsp-port)
+                                                   ,(concat "-s=" hoon-lsp-planet)
+                                                   ,(concat "-c=" hoon-lsp-code)
+                                                   ,(concat "-d=" hoon-lsp-delay)))
+                           :major-modes '(hoon-mode)
+                           :server-id 'hoon-ls))
+         (add-hook 'hoon-mode-hook #'lsp))
+    '()))
 
 (defun hoon-eval-region-in-herb ()
+  "Herb is a Python commandline tool built using nix.
+It's a formatting tool for creating and sending the
+HTTP requests that %lens uses.  Together, they allow a
+user to interact with a running ship from Earth."
   (interactive)
   (shell-command
    (concat hoon-herb-path " " hoon-herb-args " "
-	   (shell-quote-argument (buffer-substring (region-beginning) (region-end)))
-	   " &")))
+	       (shell-quote-argument (buffer-substring (region-beginning) (region-end)))
+	       " &")))
 
 (defun hoon-eval-buffer-in-herb ()
+  "Herb is a Python commandline tool built using nix.
+It's a formatting tool for creating and sending the
+HTTP requests that %lens uses.  Together, they allow a
+user to interact with a running ship from Earth."
   (interactive)
   (shell-command
    (concat hoon-herb-path " " hoon-herb-args " "
-	   (shell-quote-argument (buffer-substring-no-properties (point-min) (point-max)))
-	   " &")))
+	       (shell-quote-argument (buffer-substring-no-properties (point-min) (point-max)))
+	       " &")))
+
+;;; Eldoc support
+
+(defconst hoon-dictionary
+  (json-read-file
+   (expand-file-name
+    "hoon-dictionary.json"
+    (file-name-directory load-file-name))))
+
+(defun hoon-rune-p (rune vector)
+  "Predicate to check if RUNE is present in VECTOR."
+  (seq-filter (lambda (v) (string= rune v)) vector))
+
+(defun hoon-entry (rune dict)
+  "Get entry where RUNE is present in DICT."
+  (cdr
+   (assoc
+    'doc
+    (cdar
+     (seq-filter
+      #'(lambda (v)
+          (hoon-rune-p rune (cdr (car v)))) dict)))))
+
+(defconst hoon-things (define-thing-chars hoon-things "-@|%$:.^;~=?_*#!+<>[:alpha:]")
+      "Regex defining which strings should be sent to eldoc.")
+
+(defun hoon-mode-eldoc-function ()
+  "Show eldoc for rune at point using a dictionary file."
+  (let* ((symbol (thing-at-point 'hoon-things))
+         (entry (hoon-entry symbol hoon-dictionary)))
+    (message "%s" symbol)
+    (with-current-buffer (get-buffer-create "*eldoc-hoon*")
+      (erase-buffer)
+      (if entry
+          (progn
+            (insert entry)
+            (let ((dom (libxml-parse-html-region)))
+              (erase-buffer)
+              (shr-insert-document dom))
+            (buffer-string))))))
+
+(defcustom hoon-mode-hook '(turn-on-eldoc-mode)
+  "Hook to run upon entering Hoon mode."
+  :group 'hoon
+  :type 'list)
 
 (provide 'hoon-mode)
+
+;; Local Variables:
+;; no-byte-compile: t
+;; coding: utf-8-emacs-unix
+;; End:
+
 ;;; hoon-mode.el ends here
