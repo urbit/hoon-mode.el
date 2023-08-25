@@ -447,7 +447,7 @@ user to interact with a running ship from Earth."
       #'(lambda (v)
           (hoon-rune-p rune (cdr (car v)))) dict)))))
 
-(defconst hoon-things (define-thing-chars hoon-things "-@|%$:.^;~=?_*#!+<>[:alpha:]")
+(defconst hoon-things (define-thing-chars hoon-things "-@|%$:.^;~=?_*#!+<>&[:alpha:]")
       "Regex defining which strings should be sent to eldoc.")
 
 (defun hoon-mode-eldoc-function ()
