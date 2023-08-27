@@ -427,6 +427,13 @@ user to interact with a running ship from Earth."
 
 ;;; Eldoc support
 
+;;; The Urbit documentation is more conveniently shown in a dedicated
+;;; buffer rather than in the echo area. The most convenient way to
+;;; achieve this is to open a buffer with M-x eldoc-doc-buffer. However
+;;; you will also want to stop eldoc from displaying the documentation
+;;; in the echo area when you have the eldoc buffer active. This can
+;;; be done with (setq eldoc-echo-area-prefer-doc-buffer t).
+
 (defconst hoon-dictionary
   (json-read-file
    (expand-file-name
@@ -448,7 +455,7 @@ user to interact with a running ship from Earth."
           (hoon-rune-p rune (cdr (car v)))) dict)))))
 
 (defconst hoon-things (define-thing-chars hoon-things "-@|%$:.^;~=?_*#!+<>&[:alpha:]")
-      "Regex defining which strings should be sent to eldoc.")
+  "Regex defining which strings should be sent to eldoc.")
 
 (defun hoon-mode-eldoc-function ()
   "Show eldoc for rune at point using a dictionary file."
