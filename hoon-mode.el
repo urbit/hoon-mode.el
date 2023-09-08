@@ -109,7 +109,7 @@
 (defconst hoon-font-lock-arm-declarations-rx
   (hoon-rx (and (group "+" (or "+" "-" "$" "*")) gap
                 (group (or "$" identifier))))
-  "Regexp of declarations")
+  "Regexp of declarations.")
 
 
 (defconst hoon-font-lock-face-mold-old-rx
@@ -133,7 +133,7 @@ Used for syntax highlighting the molds on lines like |=  [a=@t b=wire].")
    (and (group word (zero-or-more (or word "-")))
         "="
         (group mold)))
-  "Regexp to match name=mold in declarations")
+  "Regexp to match name=mold in declarations.")
 
 (defconst hoon-font-lock-kethep-rx
   (hoon-rx (and "^-  "
@@ -163,8 +163,8 @@ We need to wrap the imported stuff in that context.")
 (defconst hoon-font-lock-tis-wing-rx
   (hoon-rx (and (or "=." "=?" "=*") gap (group wing)))
   "Several runes start with <rune> <gap> term/wing.
-  Combine these into one regexp.  Because of =/,
-  this rule must run after the normal mold rule.")
+Combine these into one regexp.  Because of =/,
+this rule must run after the normal mold rule.")
 
 (defconst hoon-font-lock-tisket-rx
   (hoon-rx (and "=^" gap (group-n 1 wing) (opt "=") (opt (group-n 3 mold)) gap (group-n 2 wing))))
@@ -173,8 +173,8 @@ We need to wrap the imported stuff in that context.")
   (rx (and "%" (or (and word (zero-or-more (any word "-")))
                    "|" "&" "$" ".n" ".y")))
   "Regexp of symbols.
-  This must be run before runes, or %.n and %.y will partially
-  be highlighted as runes.")
+This must be run before runes, or %.n and %.y will partially
+be highlighted as runes.")
 
 (defconst hoon-font-lock-runes-rx
   ;; This could be `regexp-opt' and added statically for more speed
@@ -223,7 +223,7 @@ We need to wrap the imported stuff in that context.")
        (and (repeat 1 3 digit)
             (zero-or-more "." (repeat 3 digit)))
        ))
-  "Regexp of numbers")
+  "Regexp of numbers.")
 
 (defconst hoon-font-lock-todos-rx
   (rx (or "XX" "XXX" "TODO" "FIXME"))
