@@ -454,12 +454,15 @@ user to interact with a running ship from Earth."
       #'(lambda (v)
           (hoon-rune-p rune (cdr (car v)))) dict)))))
 
-(defconst hoon-things (define-thing-chars hoon-things "-@|%$:.^;~=?_*#!+<>&[:alpha:]/")
+(defconst hoon-things (define-thing-chars hoon-things "-@|%$:.^;~=?_*#!+<>&[:alpha:]/([")
   "Regex defining which strings should be sent to eldoc.")
 
 (defun hoon-mode-eldoc-function ()
   "Show eldoc for rune at point using a dictionary file."
-  (let* ((symbol (thing-at-point 'hoon-things))
+  (let* ((string (thing-at-point 'hoon-things))
+         (wide (string-match "(" string))
+         (symbol (if wide (substring string 0 (1+ wide))
+                   string))
          (entry (hoon-entry symbol hoon-dictionary)))
     (message "%s" symbol)
     (with-current-buffer (get-buffer-create "*eldoc-hoon*")
