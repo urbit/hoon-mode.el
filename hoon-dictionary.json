@@ -89,7 +89,8 @@
     {
         "keys": [
             "$_",
-            "$_("
+            "$_(",
+            "_"
         ],
         "doc": "<h2><code>$_</code> \"buccab\"</h2>\n\n<p>Structure that normalizes to an example.</p>\n\n<h4>Syntax</h4>\n\n<p>One argument, fixed.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  $_  p<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  $_(p)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre><p>    _p<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%bccb p=hoon]\n</code></pre>\n\n<h4>Expands to</h4>\n\n<pre><code>|=(* p)\n</code></pre>\n\n<h4>Discussion</h4>\n\n<p><code>$_</code> discards the sample it's supposedly normalizing and produces its\n<strong>example</strong> instead.</p>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; =foo $_([%foobaz %moobaz])\n\n&gt; (foo %foo %baz)\n[%foobaz %moobaz]\n\n&gt; `foo`[%foobaz %moobaz]\n[%foobaz %moobaz]\n\n&gt; $:foo\n[%foobaz %moobaz]\n</code></pre>\n\n<hr />\n"
     },
@@ -222,7 +223,8 @@
     {
         "keys": [
             "%~",
-            "%~("
+            "%~(",
+            "~("
         ],
         "doc": "<h2><code>%~</code> \"censig\"</h2>\n\n<p>Evaluate an arm in a door.</p>\n\n<h4>Syntax</h4>\n\n<p>Three arguments, fixed.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  %~  p=wing  q=hoon<p>  r=hoon<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  %~(p q r)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre><p>    ~(p q r1 r2 rn)<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<p>In the irregular form, <code>r</code> may be split into multiple parts. Multiple parts of\n<code>r</code> will be formed into a cell.</p>\n\n<h4>Semantics</h4>\n\n<p>A <code>%~</code> expression evaluates the arm of a door (i.e., a core with a sample). <code>p</code>\nis a wing that resolves to the arm from within the door in question. <code>q</code> is the\ndoor itself. <code>r</code> is the sample of the door.</p>\n\n<h4>Discussion</h4>\n\n<p><code>%~</code> is the general case of a function call, <code>%-</code>. In both, we replace the sample (<code>+6</code>) of a core. In <code>%-</code> the core is a gate and the <code>$</code> arm is evaluated. In <code>%~</code> the core is a door and any arm may be evaluated. You must identify the arm to be run: <code>%~(arm door arg)</code>.</p>\n\n<p>Note also that <code>p</code> is a wing and can therefore be <code>.</code>, as in <code>~(. door\nsample)</code>. This little idiom lets you load your sample into the door once\ninstead of over and over.</p>\n\n<p>See also <a href=\"https://developers.urbit.org/reference/hoon/rune/bar#_-barcab\"><code>|_</code></a>.</p>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; =mycore |_  a=@\n          ++  plus-two  (add 2 a)\n          ++  double  (mul 2 a)\n          ++  mul-by\n            |=  b=@\n            (mul a b)\n          --\n\n&gt; ~(plus-two mycore 10)\n12\n\n&gt; ~(double mycore 10)\n20\n\n&gt;  =tencore ~(. mycore 10)\n&gt;  (mul-by:tencore 5)\n50\n</code></pre>\n\n<hr />\n"
     },
@@ -271,14 +273,16 @@
     {
         "keys": [
             ":*",
-            ":*("
+            ":*(",
+            "["
         ],
         "doc": "<h2><code>:*</code> \"coltar\"</h2>\n\n<p>Construct an n-tuple.</p>\n\n<h4>Syntax</h4>\n\n<p>Variable number of arguments.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  :*  p1<p>      p2<p>      p3<p>      pn<p>  ==<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  :*(p1 p2 p3 pn)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre><p>    [p1 p2 p3 pn]<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%cltr p=(list hoon)]\n</code></pre>\n\n<h4>Expands to</h4>\n\n<p><strong>Pseudocode</strong>: <code>a</code>, <code>b</code>, <code>c</code>, ... as elements of <code>p</code>:</p>\n\n<pre><code>:-(a :-(b :-(c :-(... z)))))\n</code></pre>\n\n<h4>Desugaring</h4>\n\n<pre><code>|-\n?~  p\n  !!\n?~  t.p\n  i.p\n:-  i.p\n$(p t.p)\n</code></pre>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; :*(5 3 4 1 4 9 0 ~ 'a')\n[5 3 4 1 4 9 0 ~ 'a']\n\n&gt; [5 3 4 1 4 9 0 ~ 'a']\n[5 3 4 1 4 9 0 ~ 'a']\n\n&gt; :*  5\n      3\n      4\n      1\n      4\n      9\n      0\n      ~\n      'a'\n  ==\n[5 3 4 1 4 9 0 ~ 'a']\n</code></pre>\n\n<hr />\n"
     },
     {
         "keys": [
             ":~",
-            ":~("
+            ":~(",
+            "~["
         ],
         "doc": "<h2><code>:~</code> \"colsig\"</h2>\n\n<p>Construct a null-terminated list.</p>\n\n<h4>Syntax</h4>\n\n<p>Variable number of arguments.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  :~  p1<p>      p2<p>      p3<p>      pn<p>  ==<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  :~(p1 p2 p3 pn)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre><p>    ~[p1 p2 p3 pn]<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%clsg p=(list hoon)]\n</code></pre>\n\n<h4>Expands to</h4>\n\n<p><strong>Pseudocode</strong>: <code>a</code>, <code>b</code>, <code>c</code>, ... as elements of <code>p</code>:</p>\n\n<pre><code>:-(a :-(b :-(c :-(... :-(z ~)))))\n</code></pre>\n\n<h4>Desugaring</h4>\n\n<pre><code>|-\n?~  p\n  ~\n:-  i.p\n$(p t.p)\n</code></pre>\n\n<h4>Discussion</h4>\n\n<p>Note that this does not produce a <code>list</code> type, it just produces a\nnull-terminated n-tuple. To make it a proper <code>list</code> it must be cast or molded.</p>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; :~(5 3 4 2 1)\n[5 3 4 2 1 ~]\n\n&gt; ~[5 3 4 2 1]\n[5 3 4 2 1 ~]\n\n&gt; :~  5\n      3\n      4\n      2\n      1\n  ==\n[5 3 4 2 1 ~]\n</code></pre>\n\n<hr />\n"
     },
@@ -389,7 +393,8 @@
     {
         "keys": [
             "^-",
-            "^-("
+            "^-(",
+            "`"
         ],
         "doc": "<h2><code>^-</code> \"kethep\"</h2>\n\n<p>Typecast by explicit type label.</p>\n\n<h4>Syntax</h4>\n\n<p>Two arguments, fixed.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  ^-  p<p>  q<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  ^-(p q)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre><p>    <code>p</code>q<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%kthp p=spec q=hoon]\n</code></pre>\n\n<h4>Expands to</h4>\n\n<pre><code>^+(^*(p) q)\n</code></pre>\n\n<h4>Discussion</h4>\n\n<p>It's a good practice to put a <code>^-</code> (\"kethep\") at the top of every arm\n(including gates, loops, etc). This cast is strictly necessary\nonly in the presence of head recursion (otherwise you'll get a\n<code>rest-loop</code> error, or if you really screw up spectacularly an\ninfinite loop in the compiler).</p>\n\n<h4>Examples</h4>\n\n<pre><code>~zod:dojo&gt; (add 90 7)\n97\n\n~zod:dojo&gt; `@t`(add 90 7)\n'a'\n\n~zod:dojo&gt; ^-(@t (add 90 7))\n'a'\n\n/~zod:dojo&gt; =foo |=  a=@\n                 ^-  (unit @ta)\n                 `a\n\n/~zod:dojo&gt; (foo 97)\n[~ ~.a]\n</code></pre>\n"
     },
@@ -462,7 +467,8 @@
     {
         "keys": [
             ";:",
-            ";:("
+            ";:(",
+            ":("
         ],
         "doc": "<h2><code>;:</code> \"miccol\"</h2>\n\n<p>Call a binary function as an n-ary function.</p>\n\n<h4>Syntax</h4>\n\n<p>One fixed argument, then a variable number of arguments.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  ;:  p<p>    q1<p>    q2<p>    qn<p>  ==<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  ;:(p q1 q2 qn)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre><p>    :(p q1 q2 qn)<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%mccl p=hoon q=(list hoon)]\n</code></pre>\n\n<h4>Expands to</h4>\n\n<p><strong>Pseudocode</strong>: <code>a</code>, <code>b</code>, <code>c</code>, ... as elements of <code>q</code>:</p>\n\n<p>Regular form:</p>\n\n<pre><code>%-(p a %-(p b %-(p c ...)))\n</code></pre>\n\n<p>Irregular form:</p>\n\n<pre><code>(p a (p b (p c ...)))\n</code></pre>\n\n<h4>Desugaring</h4>\n\n<pre><code>|-\n?~  q  !!\n?~  t.q  !!\n?~  t.t.q\n  (p i.q i.t.q)\n(p i.q $(q t.q))\n</code></pre>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; (add 3 (add 4 5))\n12\n\n&gt; ;:(add 3 4 5)\n12\n\n&gt; :(add 3 4 5)\n12\n\n&gt; `@t`:((cury cat 3) 'a' 'b' 'c' 'd')\n'abcd'\n</code></pre>\n\n<hr />\n"
     },
@@ -755,7 +761,8 @@
     {
         "keys": [
             "?&",
-            "?&("
+            "?&(",
+            "&("
         ],
         "doc": "<h2><code>?&amp;</code> \"wutpam\"</h2>\n\n<p>Logical AND.</p>\n\n<h4>Syntax</h4>\n\n<p>Variable arguments.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  ?&amp;  p1<p>      p2<p>      pn<p>  ==<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  ?&amp;(p1 p2 pn)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre><p>    &amp;(p1 p2 pn)<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%wtpm p=(list hoon)]\n</code></pre>\n\n<h4>Expands to</h4>\n\n<p><strong>Pseudocode</strong>: <code>a</code>, <code>b</code>, <code>c</code>, ... as elements of <code>p</code>:</p>\n\n<pre><code>?.(a | ?.(b | ?.(c | ?.(... ?.(z | &amp;)))))\n</code></pre>\n\n<h4>Desugaring</h4>\n\n<pre><code>|-\n?~  p\n  &amp;\n?.  i.p\n  |\n$(p t.p)\n</code></pre>\n\n<h4>Produces</h4>\n\n<p>If ALL arguments evaluate to true (<code>%.y</code>), true (<code>%.y</code>). If one or more evalute\nto false (<code>%.n</code>), false (<code>%.n</code>).</p>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; &amp;(=(6 6) =(42 42))\n%.y\n\n&gt; &amp;(=(6 7) =(42 42))\n%.n\n</code></pre>\n\n<hr />\n"
     },
