@@ -454,14 +454,20 @@ user to interact with a running ship from Earth."
       #'(lambda (v)
           (hoon-rune-p rune (cdr (car v)))) dict)))))
 
-(defconst tall-rune-things-regexp "[-~@|%$:.;=?_*#!+<>&/^]\\{2\\}"
+(defconst rune-regexp "[-~@|%$:.,;=?_*#!+<>&/^]"
+  "Regexp class defining runes, without quantifier.")
+
+(defconst tall-rune-things-regexp (concat rune-regexp "\\{2\\}")
   "Regex defining tall rune symbols.")
 
-(defconst wide-rune-things-regexp "[-~@|%$:.;=?_*#!+<>&/^]\\{1,2\\}("
+(defconst wide-rune-things-regexp (concat rune-regexp "{1,2\\}(")
   "Regex defining wide rune symbols.")
 
+(defconst single-char-irregular-regexp ",\\|`\\|;\\|_"
+  "Regex defining single character irregular forms.")
+
 (defconst stdlib-things (define-thing-chars stdlib-things "-[:alpha:]")
-  "Regex defining stdlib symbols.")
+  "Characters defining stdlib symbols.")
 
 (defun hoon-mode-eldoc-function ()
   "Show eldoc for rune at point using a dictionary file."
@@ -469,6 +475,8 @@ user to interact with a running ship from Earth."
           (cond ((thing-at-point-looking-at tall-rune-things-regexp 300)
                  (match-string 0))
                 ((thing-at-point-looking-at wide-rune-things-regexp 300)
+                 (match-string 0))
+                ((thing-at-point-looking-at single-char-irregular-regexp 1)
                  (match-string 0))
                 (t (thing-at-point 'stdlib-things))))
          (entry (hoon-entry symbol hoon-dictionary)))
