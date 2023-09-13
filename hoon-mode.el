@@ -457,11 +457,12 @@ user to interact with a running ship from Earth."
 (defconst rune-regexp "[-~@|%$:.,;=?_*#!+<>&/^]"
   "Regexp class defining runes, without quantifier.")
 
+(defconst wide-rune-things-regexp (concat rune-regexp "\\{1,2\\}(\\|"
+                                          rune-regexp "\\{1\\}\\[")
+  "Regex defining wide rune symbols.")
+
 (defconst tall-rune-things-regexp (concat rune-regexp "\\{2\\}")
   "Regex defining tall rune symbols.")
-
-(defconst wide-rune-things-regexp (concat rune-regexp "{1,2\\}(")
-  "Regex defining wide rune symbols.")
 
 (defconst single-char-irregular-regexp ",\\|`\\|;\\|_"
   "Regex defining single character irregular forms.")
@@ -472,9 +473,9 @@ user to interact with a running ship from Earth."
 (defun hoon-mode-eldoc-function ()
   "Show eldoc for rune at point using a dictionary file."
   (let* ((symbol
-          (cond ((thing-at-point-looking-at tall-rune-things-regexp 300)
+          (cond ((thing-at-point-looking-at wide-rune-things-regexp 300)
                  (match-string 0))
-                ((thing-at-point-looking-at wide-rune-things-regexp 300)
+                ((thing-at-point-looking-at tall-rune-things-regexp 300)
                  (match-string 0))
                 ((thing-at-point-looking-at single-char-irregular-regexp 1)
                  (match-string 0))
