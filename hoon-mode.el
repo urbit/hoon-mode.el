@@ -481,7 +481,8 @@ user to interact with a running ship from Earth."
                  (match-string 0))
                 (t (thing-at-point 'stdlib-things))))
          (entry (hoon-entry symbol hoon-dictionary)))
-    (message "%s" symbol)
+    ;; Useful for debugging, but conflicts with treesitter.
+    ;; (message "%s" symbol)
     (with-current-buffer (get-buffer-create "*eldoc-hoon*")
       (erase-buffer)
       (if entry
