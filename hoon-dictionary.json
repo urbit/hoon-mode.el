@@ -174,7 +174,8 @@
     {
         "keys": [
             "$?",
-            "$?("
+            "$?(",
+            "?("
         ],
         "doc": "<h2><code>$?</code> \"bucwut\"</h2>\n\n<p>Form a type from a union of other types.</p>\n\n<h4>Syntax</h4>\n\n<p>Variable number of arguments.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  $?  p1<p>      p2<p>      p3<p>      pn<p>  ==<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  $?(p1 p2 p3 pn)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>    ?(p1 p2 p3 pn)<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%bcwt p=(list spec)]\n</code></pre>\n\n<h4>Normalizes to</h4>\n\n<p>The last item in <code>p</code> which normalizes the sample to itself.</p>\n\n<p>Void, if <code>p</code> is empty.</p>\n\n<h4>Defaults to</h4>\n\n<p>The last item in <code>p</code>.</p>\n\n<h4>Discussion</h4>\n\n<p>For a union of atoms, a <code>$?</code> is fine. For more complex nouns, always try to use\na <a href=\"#-buccen\"><code>$%</code></a>, <a href=\"#-bucpat\"><code>$@</code></a> or <a href=\"#-bucket\"><code>$^</code></a>, at least if you expect\nyour structure to be used as a normalizer.</p>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; =a ?(%foo %baz %baz)\n\n&gt; (a %baz)\n%baz\n\n&gt; (a [37 45])\nford: %ride failed to execute:\n\n&gt; $:a\n%baz\n</code></pre>\n"
     },
@@ -188,7 +189,8 @@
     {
         "keys": [
             "%:",
-            "%:("
+            "%:(",
+            "("
         ],
         "doc": "<h2><code>%:</code> \"cencol\"</h2>\n\n<p>Call a gate with many arguments.</p>\n\n<h4>Syntax</h4>\n\n<p>One fixed argument, then a variable number of arguments.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  %:  a=hoon<p>    b=hoon<p>    c=hoon<p>     ...<p>    d=hoon<p>  ==<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  %:(a b c d)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>    (a b c d)<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%cncl p=hoon q=(list hoon)]\n</code></pre>\n\n<h4>Semantics</h4>\n\n<p>A <code>%:</code> expression calls a gate with many arguments. <code>a</code> is the gate to be\ncalled, and <code>b</code> through <code>d</code> are the arguments. If there is only one\nsubexpression after <code>a</code>, its product is the sample. Otherwise, a single argument\nis constructed by evaluating all of <code>b</code> through <code>d</code> -- however many\nsubexpressions there are -- and putting the result in a cell: <code>[b c ... d]</code>.</p>\n\n<h4>Discussion</h4>\n\n<p>When <code>%:</code> is used in tall-form syntax, the series of expressions after <code>p</code> must be terminated with <code>==</code>.</p>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; %:  add  22  33  ==\n55\n\n&gt; =adder |=  a=*\n         =+  c=0\n         |-\n         ?@  a  (add a c)\n         ?^  -.a  !!\n         $(c (add -.a c), a +.a)\n\n&gt; %:  adder  22  33  44  ==\n99\n\n&gt; %:  adder  22  33  44  55  ==\n154\n\n&gt; %:(adder 22 33 44)\n99\n\n&gt; (adder 22 33 44)\n99\n</code></pre>\n\n<hr />\n"
     },
@@ -202,21 +204,24 @@
     {
         "keys": [
             "%-",
-            "%-("
+            "%-(",
+            "("
         ],
         "doc": "<h2><code>%-</code> \"cenhep\" {% #-cenhep %}</h2>\n\n<p>Call a gate (function).</p>\n\n<h4>Syntax</h4>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  %-  a<p>  b<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  %-(a b)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>    (a b)<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%cnhp p=hoon q=hoon]\n</code></pre>\n\n<h4>Semantics</h4>\n\n<p>This rune is for evaluating the <code>$</code> arm of a gate, i.e., calling a gate as a\nfunction. <code>a</code> is the gate, and <code>b</code> is the desired sample value (i.e., input\nvalue) for the gate.</p>\n\n<h4>Expands to</h4>\n\n<pre><code>%~($ a b)\n</code></pre>\n\n<h4>Discussion</h4>\n\n<p><code>%-</code> is used to call a function; <code>a</code> is the function\n(<a href=\"https://developers.urbit.org/reference/hoon/rune/bar#-bartis\"><code>gate</code></a>, <code>q</code> the argument. <code>%-</code> is a\nspecial case of <a href=\"#-censig\"><code>%~</code> (\"censig\")</a>, and a gate is a special case of a\n<a href=\"https://developers.urbit.org/reference/hoon/rune/bar#_-barcab\">door</a>.</p>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; =add-triple |=([a=@ b=@ c=@] :(add a b c))\n\n&gt; (add-triple 1 2 3)\n6\n\n&gt; %-(add-triple [1 2 3])\n6\n</code></pre>\n\n<hr />\n"
     },
     {
         "keys": [
             "%^",
-            "%^("
+            "%^(",
+            "("
         ],
-        "doc": "<h2><code>%^</code> \"cenket\"</h2>\n\n<p>Call gate with triple sample.</p>\n\n<h4>Syntax</h4>\n\n<p>Four arguments, fixed.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  %^    a<p>      b<p>    c<p>  d<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  %^(a b c d)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>    (a b c d)<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%cnkt p=hoon q=hoon r=hoon s=hoon]\n</code></pre>\n\n<h4>Expands to</h4>\n\n<pre><code>%-(a=hoon [b=hoon c=hoon d=hoon])\n</code></pre>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; =add-triple |=([a=@ b=@ c=@] :(add a b c))\n\n&gt; %^(add-triple 1 2 3)\n6\n</code></pre>\n\n<hr />\n"
+        "doc": "<h2><code>%^</code> \"cenket\"</h2>\n\n<p>Call gate with triple sample.</p>\n\n<h4>Syntax</h4>\n\n<p>Four arguments, fixed.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  %^    a<p>      b<p>    c<p>  d<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  %^(a b c d)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>    (a b c d)<p> b </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%cnkt p=hoon q=hoon r=hoon s=hoon]\n</code></pre>\n\n<h4>Expands to</h4>\n\n<pre><code>%-(a=hoon [b=hoon c=hoon d=hoon])\n</code></pre>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; =add-triple |=([a=@ b=@ c=@] :(add a b c))\n\n&gt; %^(add-triple 1 2 3)\n6\n</code></pre>\n\n<hr />\n"
     },
     {
         "keys": [
             "%+",
-            "%+("
+            "%+(",
+            "("
         ],
         "doc": "<h2><code>%+</code> \"cenlus\"</h2>\n\n<p>Call gate with a cell sample.</p>\n\n<h4>Syntax</h4>\n\n<p>Three arguments, fixed.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  %+  a<p>    b<p>  c<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  %+(a b c)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>    (a b c)<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%cnls p=hoon q=hoon r=hoon]\n</code></pre>\n\n<h4>Semantics</h4>\n\n<p>A <code>%+</code> expression is for calling a gate with a cell sample. <code>a</code> is the gate to\nbe called, <code>b</code> is for the head of the sample, and <code>c</code> is for the sample tail.</p>\n\n<h4>Expands to</h4>\n\n<pre><code>%-(a=hoon [b=hoon c=hoon])\n</code></pre>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; =add-triple |=([a=@ b=@ c=@] :(add a b c))\n\n&gt; %+(add-triple 1 [2 3])\n6\n</code></pre>\n\n<hr />\n"
     },
@@ -259,14 +264,16 @@
     {
         "keys": [
             ":+",
-            ":+("
+            ":+(",
+            "["
         ],
         "doc": "<h2><code>:+</code> \"collus\"</h2>\n\n<p>Construct a triple (3-tuple).</p>\n\n<h4>Syntax</h4>\n\n<p>Three arguments, fixed.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  :+  p<p>    q<p>  r<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  :+(p q r)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>    [p q r]<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%clls p=hoon q=hoon r=hoon]\n</code></pre>\n\n<h4>Expands to:</h4>\n\n<pre><code>:-(p :-(q r))\n</code></pre>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; :+  1\n    2\n  3\n[1 2 3]\n\n&gt; :+(%a ~ 'b')\n[%a ~ 'b']\n</code></pre>\n\n<hr />\n"
     },
     {
         "keys": [
             ":^",
-            ":^("
+            ":^(",
+            "["
         ],
         "doc": "<h2><code>:^</code> \"colket\"</h2>\n\n<p>Construct a quadruple (4-tuple).</p>\n\n<h4>Syntax</h4>\n\n<p>Four arguments, fixed.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  :^    p<p>      q<p>    r<p>  s<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  :^(p q r s)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>    [p q r s]<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%clkt p=hoon q=hoon r=hoon s=hoon]\n</code></pre>\n\n<h4>Expands to</h4>\n\n<pre><code>:-(p :-(q :-(r s)))\n</code></pre>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; :^(1 2 3 4)\n[1 2 3 4]\n\n&gt; :^    5\n      6\n    7\n  8\n[5 6 7 8]\n</code></pre>\n\n<hr />\n"
     },
@@ -302,7 +309,8 @@
     {
         "keys": [
             ".+",
-            ".+("
+            ".+(",
+            "+("
         ],
         "doc": "<h2><code>.+</code> \"dotlus\"</h2>\n\n<p>Increment an atom with Nock <code>4</code>.</p>\n\n<h4>Syntax</h4>\n\n<p>One argument, fixed.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  .+  p<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  .+(p)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>    +(p)<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%dtls p=hoon]\n</code></pre>\n\n<h4>Produces</h4>\n\n<p><code>p</code> plus <code>1</code> if <code>p</code> is an atom; otherwise, crashes. The product atom has no aura.</p>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; .+(6)\n7\n\n&gt; +(6)\n7\n\n&gt; +(%foo)\n7.303.015\n\n&gt; +([1 2])\nnest-fail\n</code></pre>\n\n<hr />\n"
     },
@@ -316,7 +324,8 @@
     {
         "keys": [
             ".=",
-            ".=("
+            ".=(",
+            "=("
         ],
         "doc": "<h2><code>.=</code> \"dottis\"</h2>\n\n<p>Test for equality with Nock <code>5</code>.</p>\n\n<h4>Syntax</h4>\n\n<p>Two arguments, fixed.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  .=  p<p>  q<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  .=(p q)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>    =(p q)<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%dtts p=hoon q=hoon]\n</code></pre>\n\n<h4>Produces</h4>\n\n<p><code>%.y</code> if <code>p</code> equals <code>q</code>; otherwise <code>%.n</code>.</p>\n\n<h4>Discussion</h4>\n\n<p>Like Nock equality, <code>.=</code> (\"dottis\") tests whether two nouns are the same,\nignoring invisible pointer structure. Because in a conventional noun\nimplementation each noun has a lazy short hash, comparisons are fast unless the\nhash needs to be computed, or we are comparing separate copies of identical\nnouns. (Comparing large duplicates is a common cause of performance bugs.)</p>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; .=(0 0)\n%.y\n\n&gt; =(0 0)\n%.y\n\n&gt; .=(1 2)\n%.n\n\n&gt; =(1 2)\n%.n\n\n&gt; =(12 [12 14])\n%.n\n</code></pre>\n\n<hr />\n"
     },
@@ -379,7 +388,8 @@
     {
         "keys": [
             "^:",
-            "^:("
+            "^:(",
+            ","
         ],
         "doc": "<h2><code>^:</code> \"ketcol\"</h2>\n\n<p>Switch parser into structure mode (mold definition) and produce a gate for type <code>p</code>.  (See <a href=\"\"><code>,</code> com</a> which toggles modes.)</p>\n\n<h4>Syntax</h4>\n\n<p>One argument, fixed.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  ^:  p<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  ^:(p)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>  ,p<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%ktcl p=spec]\n</code></pre>\n\n<h4>Produces</h4>\n\n<p>A gate that returns the sample value if it is of the correct type, but crashes\notherwise.</p>\n\n<h4>Discussion</h4>\n\n<p><code>^:</code> is used to produce a mold that crashes if its sample is of the wrong type.</p>\n\n<p>In structure mode, <code>[a=@ b=@]</code> is a mold for a cell, whereas in value mode it's\na pair of molds.  Sometimes you need a structure in value mode, in which you can\nuse <code>^:</code> or <code>,</code>.</p>\n\n<p>Molds used to produced their bunt value if they couldn't mold their sample. This\nis no longer the case: molds now crash if molding fails, so this rune is\nredundant in certain cases.</p>\n\n<p>One may expect that <code>^:(path /foo)</code> would result in a syntax error since <code>^:</code>\nonly takes one child, but instead it will parse as <code>=&lt; ^ %:(path /foo)</code>. Since\n<code>:</code> is the irregular syntax for <code>=&lt;</code> this is is parsed as \"get <code>^</code> (i.e. the\nmold for cells) from a subject of <code>(path /foo)</code>\", with <code>:</code> being the irregular\nsyntax for <code>=&lt;</code>.</p>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; ^:  @\n&lt; 1.goa\n  { *\n    {our/@p now/@da eny/@uvJ}\n    &lt;19.hqf 23.byz 5.mzd 36.apb 119.zmz 238.ipu 51.mcd 93.glm 74.dbd 1.qct $141&gt;\n  }\n&gt;\n\n&gt; (^:(@) 22)\n22\n\n&gt; (^:(@) [22 33])\nford: %ride failed to execute:\n\n&gt; (,cord 55)\n'7'\n\n&gt; (ream ',@t')\n[%ktcl p=[%base p=[%atom p=~.t]]]\n\n&gt; (ream ',cord')\n[%ktcl p=[%like p=~[%cord] q=~]]\n</code></pre>\n\n<hr />\n"
     },
@@ -422,7 +432,8 @@
     {
         "keys": [
             "^*",
-            "^*("
+            "^*(",
+            "*"
         ],
         "doc": "<h2><code>^*</code> \"kettar\"</h2>\n\n<p>Produce example type value.</p>\n\n<h4>Syntax</h4>\n\n<p>One argument, fixed.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  ^*  p<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  ^*(p)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>    *p<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<p><code>p</code> is any structure expression.</p>\n\n<h4>AST</h4>\n\n<pre><code>[%kttr p=spec]\n</code></pre>\n\n<h4>Produces</h4>\n\n<p>A default value (i.e., 'bunt value') of the type <code>p</code>.</p>\n\n<h4>Examples</h4>\n\n<p>Regular:</p>\n\n<pre><code>&gt; ^*  @\n0\n\n&gt; ^*  %baz\n%baz\n\n&gt; ^*  ^\n[0 0]\n\n&gt; ^*  ?\n%.y\n</code></pre>\n\n<p>Irregular:</p>\n\n<pre><code>&gt; *@\n0\n\n&gt; *^\n[0 0]\n\n&gt; *tape\n\"\"\n</code></pre>\n\n<hr />\n"
     },
@@ -705,7 +716,8 @@
     {
         "keys": [
             "?|",
-            "?|("
+            "?|(",
+            "|("
         ],
         "doc": "<h2><code>?|</code> \"wutbar\"</h2>\n\n<p>Logical OR.</p>\n\n<h4>Syntax</h4>\n\n<p>Variable number of arguments.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  ?|  p1<p>      p2<p>      p3<p>      pn<p>  ==<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  ?|(p1 p2 p3 pn)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>    |(p1 p2 p3 pn)<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%wtbr p=(list hoon)]\n</code></pre>\n\n<h4>Expands to</h4>\n\n<p><strong>Pseudocode</strong>: <code>a</code>, <code>b</code>, <code>c</code>, ... as elements of <code>p</code>:</p>\n\n<pre><code>?:(a &amp; ?:(b &amp; ?:(c &amp; ?:(... ?:(z &amp; |)))))\n</code></pre>\n\n<h4>Desugaring</h4>\n\n<pre><code>|-\n?~  p\n  |\n?:  i.p\n  &amp;\n$(p t.p)\n</code></pre>\n\n<h4>Produces</h4>\n\n<p>If any argument evaluates to true (<code>%.y</code>), true. If all arguments evaluate to\nfalse (<code>%.n</code>), false.</p>\n\n<h4>Examples</h4>\n\n<pre><code>&gt; |(=(6 42) =(42 42))\n%.y\n\n&gt; |(=(6 42) =(42 43))\n%.n\n</code></pre>\n\n<hr />\n"
     },
@@ -790,7 +802,8 @@
     {
         "keys": [
             "?!",
-            "?!("
+            "?!(",
+            "!"
         ],
         "doc": "<h2><code>?!</code> \"wutzap\"</h2>\n\n<p>Logical NOT.</p>\n\n<h4>Syntax</h4>\n\n<p>One argument, fixed.</p>\n\n<table>\n<thead>\n<tr>\n  <th style=\"text-align:center;\">Form</th>\n  <th style=\"text-align:center;\">Syntax</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n  <td style=\"text-align:center;\">Tall</td>\n  <td style=\"text-align:center;\"><pre>  ?!  p<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Wide</td>\n  <td style=\"text-align:center;\"><pre>  ?!(p)<p>  </pre></td>\n</tr>\n<tr>\n  <td style=\"text-align:center;\">Irregular</td>\n  <td style=\"text-align:center;\"><pre>    !p<p>  </pre></td>\n</tr>\n</tbody>\n</table>\n\n<h4>AST</h4>\n\n<pre><code>[%wtzp p=hoon]\n</code></pre>\n\n<h4>Expands to</h4>\n\n<pre><code>.=(| p)\n</code></pre>\n\n<h4>Produces</h4>\n\n<p>The logical NOT of <code>p</code>, which must evaluate to either <code>%.y</code> or <code>%.n</code>.</p>\n\n<h4>Examples</h4>\n\n<pre><code>~zod:dojo&gt; ?!(.=(1 2))\n%.y\n\n~zod:dojo&gt; !&amp;\n%.n\n\n~zod:dojo&gt; !|\n%.y\n\n~zod:dojo&gt; !(gth 5 6)\n%.y\n</code></pre>\n"
     },
