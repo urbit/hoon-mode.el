@@ -464,7 +464,7 @@ user to interact with a running ship from Earth."
 (defconst tall-rune-things-regexp (concat rune-regexp "\\{2\\}")
   "Regex defining tall rune symbols.")
 
-(defconst single-char-irregular-regexp ",\\|`\\|;\\|_"
+(defconst single-char-irregular-regexp ",\\|`\\|;\\|_\\|("
   "Regex defining single character irregular forms.")
 
 (defconst stdlib-things (define-thing-chars stdlib-things "-[:alpha:]")
