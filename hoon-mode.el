@@ -109,7 +109,7 @@
 (defconst hoon-font-lock-arm-declarations-rx
   (hoon-rx (and (group "+" (or "+" "-" "$" "*")) gap
                 (group (or "$" identifier))))
-  "Regexp of declarations")
+  "Regexp of declarations.")
 
 
 (defconst hoon-font-lock-face-mold-old-rx
@@ -133,7 +133,7 @@ Used for syntax highlighting the molds on lines like |=  [a=@t b=wire].")
    (and (group word (zero-or-more (or word "-")))
         "="
         (group mold)))
-  "Regexp to match name=mold in declarations")
+  "Regexp to match name=mold in declarations.")
 
 (defconst hoon-font-lock-kethep-rx
   (hoon-rx (and "^-  "
@@ -163,8 +163,8 @@ We need to wrap the imported stuff in that context.")
 (defconst hoon-font-lock-tis-wing-rx
   (hoon-rx (and (or "=." "=?" "=*") gap (group wing)))
   "Several runes start with <rune> <gap> term/wing.
-  Combine these into one regexp.  Because of =/,
-  this rule must run after the normal mold rule.")
+Combine these into one regexp.  Because of =/,
+this rule must run after the normal mold rule.")
 
 (defconst hoon-font-lock-tisket-rx
   (hoon-rx (and "=^" gap (group-n 1 wing) (opt "=") (opt (group-n 3 mold)) gap (group-n 2 wing))))
@@ -173,8 +173,8 @@ We need to wrap the imported stuff in that context.")
   (rx (and "%" (or (and word (zero-or-more (any word "-")))
                    "|" "&" "$" ".n" ".y")))
   "Regexp of symbols.
-  This must be run before runes, or %.n and %.y will partially
-  be highlighted as runes.")
+This must be run before runes, or %.n and %.y will partially
+be highlighted as runes.")
 
 (defconst hoon-font-lock-runes-rx
   ;; This could be `regexp-opt' and added statically for more speed
@@ -223,7 +223,7 @@ We need to wrap the imported stuff in that context.")
        (and (repeat 1 3 digit)
             (zero-or-more "." (repeat 3 digit)))
        ))
-  "Regexp of numbers")
+  "Regexp of numbers.")
 
 (defconst hoon-font-lock-todos-rx
   (rx (or "XX" "XXX" "TODO" "FIXME"))
@@ -454,14 +454,35 @@ user to interact with a running ship from Earth."
       #'(lambda (v)
           (hoon-rune-p rune (cdr (car v)))) dict)))))
 
-(defconst hoon-things (define-thing-chars hoon-things "-@|%$:.^;~=?_*#!+<>&[:alpha:]")
-  "Regex defining which strings should be sent to eldoc.")
+(defconst rune-regexp "[-~@|%$:.,;=?_*#!+<>&/^]"
+  "Regexp class defining runes, without quantifier.")
+
+(defconst wide-rune-things-regexp (concat rune-regexp "\\{1,2\\}(\\|"
+                                          rune-regexp "\\{1\\}\\[")
+  "Regex defining wide rune symbols.")
+
+(defconst tall-rune-things-regexp (concat rune-regexp "\\{2\\}")
+  "Regex defining tall rune symbols.")
+
+(defconst single-char-irregular-regexp ",\\|`\\|;\\|_\\|("
+  "Regex defining single character irregular forms.")
+
+(defconst stdlib-things (define-thing-chars stdlib-things "-[:alpha:]")
+  "Characters defining stdlib symbols.")
 
 (defun hoon-mode-eldoc-function ()
   "Show eldoc for rune at point using a dictionary file."
-  (let* ((symbol (thing-at-point 'hoon-things))
+  (let* ((symbol
+          (cond ((thing-at-point-looking-at wide-rune-things-regexp 300)
+                 (match-string 0))
+                ((thing-at-point-looking-at tall-rune-things-regexp 300)
+                 (match-string 0))
+                ((thing-at-point-looking-at single-char-irregular-regexp 1)
+                 (match-string 0))
+                (t (thing-at-point 'stdlib-things))))
          (entry (hoon-entry symbol hoon-dictionary)))
-    (message "%s" symbol)
+    ;; Useful for debugging, but conflicts with treesitter.
+    ;; (message "%s" symbol)
     (with-current-buffer (get-buffer-create "*eldoc-hoon*")
       (erase-buffer)
       (if entry
